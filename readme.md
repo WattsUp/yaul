@@ -1,5 +1,5 @@
 # yaul #
-yaul is yet another UI library for cross-platform C++ aimed for desktop applications. yaul was designed with the following considerations:
+yaul (IPA: /jɔːl/, homophone: y'all) is yet another UI library for cross-platform C++ aimed for desktop applications. yaul was designed with the following considerations:
 1. It should be Free and Open Source Software.
 2. It should be fast to compile for debug builds.
 3. It should have automatic UI reloading to allow graphical updates to be made without a RAD tool.
@@ -68,6 +68,7 @@ Configure the project with default compiler and compile
 * `examples/character-map`  A utility to show all glyphs of a font
 * `examples/clock`          A clock to display the current time with selectable interfaces
 * `examples/code-editor`    A text editor with syntactical highlighting
+* `examples/hello-world`    The minimum implementation of a yaul GUI
 * `examples/hex-editor`     A file editor on a byte level
 * `examples/synthesizer`    A digital audio workstation to synthesize sounds using emulated analog circuits
 
