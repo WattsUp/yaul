@@ -1,13 +1,15 @@
-# C++ Project Template #
-A template repository designed for medium to large C++ projects with multiple subprojects/executables.
-Includes
-* CMake build system
-* Automatic semantic versioning
-* [spdlog](https://github.com/gabime/spdlog) logging library
-* [Google Test](https://github.com/google/googletest) framework
-* Clang-format and clang-tidy
-* Multiple target executables for main program, installer, auto-updater, tester, etc.
-* Doxygen documentation
+# yaul #
+yaul (IPA: /jɔːl/, homophone: y'all) is yet another UI library for cross-platform C++ aimed for desktop applications. yaul was designed with the following considerations:
+1. It should be Free and Open Source Software.
+2. It should be fast to compile for debug builds.
+3. It should have automatic UI reloading to allow graphical updates to be made without a RAD tool.
+4. It should be resolution independent.
+5. It should use modern C++.
+6. It should be simple to use with many examples.
+7. It should be bloat-free with an emphasis on memory and disk usage.
+8. It should be have the same non-native look and feel on all platforms, customizable with CSS (or similar).
+9. It should be event based to minimize power consumption.
+10. It should be statically or dynamically linked
 
 ## Prerequisites ##
 * Modern C/C++ compiler
@@ -31,14 +33,6 @@ On Windows I recommend using [vcpkg](https://github.com/Microsoft/vcpkg)
 * [spdlog](https://github.com/gabime/spdlog) logging library
 * [Google Test](https://github.com/google/googletest) framework
 
-### Git Clone ###
-Clone the repository
-```bash
-> mkdir workspace
-> cd workspace
-> git clone https://github.com/WattsUp/CppProjectTemplate myProject
-```
-
 ### Manually Building ###
 Configure the project with default compiler and compile
 ```bash
@@ -53,32 +47,35 @@ Configure the project with default compiler and compile
 4. Click `Build All Projects`
 
 ## Folder Structure ##
-* `bin`       Binary folder, output directory for executables, add runtime resources here (icons, etc.)
 * `common`    Common code shared amongst projects: logging, utilities, etc.
 * `docs`      Documentation folder
 * `docs\www`  Documentation webpage root folder, ignored, clone of repository's gh-pages branch
+* `examples`  Collection of examples that use yaul
 * `include`   Public include folder for libraries
 * `libraries` Third party libraries
+* `res`       Runtime resources here (icons, etc.)
 * `tools`     Helper code such as check coding conventions script
 
 ### Projects ###
-* `installer-win`   Self-extracting installer executable which sets up directories, variables, etc.
-* `project-fractal` Application to draw a fractal to the console
-* `project-library` Library to add two numbers together
+* `installer-win` Self-extracting installer executable to install examples
+* `project-yaul`  Core library functions for creating a basic application with minimal size
+* `project-media` Add-on library for recording/playing audio and recording/playing video
+* `project-plot`  Add-on library for plotting data: line, scatter, pie, bar, etc.
 
-## Adapting ##
-1. Clone the repository, see [Git Clone](#git-clone). (Or download manually)
-2. Run the python script `tools/SetupProject.py` from the top level folder. It will guide you through the process. The script checks for all software dependencies (prompts for their installation), modifies top-level project name, modifies targets, resets the git repository to an initial commit, and tags the commit v0.0.0. The only dependency is the ability to run python scripts.
-
-**Note:** Target names cannot have spaces in CMake. To have spaces in the output files uncomment the following in `./CMakeLists.txt` and duplicate as needed:
-```CMake
-set_target_properties([TargetNoSpaces] PROPERTIES OUTPUT_NAME "Target With Spaces")
-```
+### Projects ###
+* `examples/3d-scene`       A 3D demo scene with UI overlay
+* `examples/calculator`     A calculator with basic, scientific, and programming options
+* `examples/character-map`  A utility to show all glyphs of a font
+* `examples/clock`          A clock to display the current time with selectable interfaces
+* `examples/code-editor`    A text editor with syntactical highlighting
+* `examples/hello-world`    The minimum implementation of a yaul GUI
+* `examples/hex-editor`     A file editor on a byte level
+* `examples/synthesizer`    A digital audio workstation to synthesize sounds using emulated analog circuits
 
 ## Documentation branch ##
 The `docs/www` folder contains the documentation branch of this repo (`gh-pages` for GitHub). Once the repository has a remote, clone that branch into that folder and use it to build a documentation website.
 ```bash
-git clone [URL] -b gh-pages docs/www
+git clone https://github.com/WattsUp/yaul.git -b gh-pages docs/www
 ```
 
 ## Known issues ##
