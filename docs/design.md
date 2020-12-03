@@ -95,7 +95,7 @@ CSS files style visual elements. Not all features of CSS are implemented, see [C
 ```
 ---
 ## Front-end to Back-end Connection ##
-yaul is designed with a Model-View-ViewModel (MVVM) architecture.
+yaul is designed for a Model-View-ViewModel (MVVM) architecture.
 * The **Model** contains the application's business logic and its data. The Model remains decoupled enough such that it may be reused in different contexts such as a command-line interface.
 * The **View** describes the visual elements the user sees and interacts with. This is done in XML and CSS files.
 * The **ViewModel** links the Model and the View by providing binding targets. User interaction of the View is processed by event handlers in the ViewModel which may call Model methods or update the View directly. The Model updates values in the ViewModel which propagate changes to the View.
@@ -103,4 +103,6 @@ yaul is designed with a Model-View-ViewModel (MVVM) architecture.
 For each window, yaul has an `updateView` and `handleEvents` method. The former method reads data out of the ViewModel and uses the View to draw to the screen. The later method checks for any user interaction and handles those events via the ViewModel's bindings. The default case is to have a thread running these commands while events are handled asynchronously in children threads. yaul will wait for changes to the ViewModel and limit itself to a refresh rate before redrawing to reduce resource usage. For synchronous applications, the application can explicitly call these methods.
 
 ## Graphics Bindings ##
-By default yaul will use the platform's default graphics API. DirectX for Windows, OpenGL for Linux, and Metal for Mac. yaul is also compatible with Vulkan. For platforms with multiple graphics APIs, a specific one may be explicitly specified.
+By default yaul will use the platform's default graphics API. DirectX for Windows, OpenGL for Linux, and Metal for Mac. yaul is also compatible with Vulkan. For platforms with multiple graphics APIs, a specific one may be explicitly specified. Hardware acceleration can be disabled to force CPU rendering.
+
+yaul is able to be integrated into complex 3D applications such as CAD or games. The UI can overlay on top of a 3D scene and/or yaul can output to textures on 3D objects.
