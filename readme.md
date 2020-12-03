@@ -1,4 +1,6 @@
 # yaul #
+![Windows Build](https://github.com/WattsUp/yaul/workflows/Windows%20Build/badge.svg)
+![Linux Build](https://github.com/WattsUp/yaul/workflows/Linux%20Build/badge.svg)
 yaul (IPA: /jɔːl/, homophone: y'all) is yet another UI library for cross-platform C++ aimed for desktop applications. yaul was designed with the following considerations:
 1. It should be Free and Open Source Software.
 2. It should be fast to compile for debug builds.
