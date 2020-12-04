@@ -2,6 +2,7 @@
 Checks: '-*,
         bugprone-*,
         cppcoreguidelines-*,
+        -cppcoreguidelines-pro-bounds-pointer-arithmetic,
         clang-analyzer-*,
         google-*,
         -google-readability-braces-around-statements,

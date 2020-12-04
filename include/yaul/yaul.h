@@ -25,13 +25,6 @@ typedef unsigned __int32 uint32_t;
 #include <stdint.h>
 #endif
 
-/**
- * @brief Add two numbers using yaul
- *
- * @param a
- * @param b
- * @return uint32_t a + b
- */
-uint32_t YAUL_API yaulAdd(uint32_t a, uint32_t b);
+#include "log.h"
 
 #endif /* _YAUL_H_ */

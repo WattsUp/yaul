@@ -12,7 +12,7 @@ namespace logging {
 const size_t MAX_FILE_SIZE  = 5 * 1024 * 1024;  // 5MiB
 const size_t MAX_FILE_COUNT = 3;
 
-void configure(const char* filename, bool useConsole);
+void configure(const char* filename);
 
 }  // namespace logging
 }  // namespace common

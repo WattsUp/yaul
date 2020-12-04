@@ -11,6 +11,6 @@
  * @return int zero on success, non-zero on failure
  */
 int main(int argc, char* argv[]) {
-  printf("Yaul adds 10 + 3 = %d", yaulAdd(10, 3));
+  // printf("Yaul adds 10 + 3 = %d", yaulAdd(10, 3));
   return 0;
 }
