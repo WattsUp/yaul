@@ -1,4 +1,4 @@
-#include "yaul/yaul.h"
+#include "yaul/yaul.hpp"
 
 #include <cstdio>
 #include <exception>

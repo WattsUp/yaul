@@ -39,8 +39,8 @@ else()
   set(ARCHITECTURE "x86")
 endif()
 
-# Global setting: Use C++14
-set(CMAKE_CXX_STANDARD 14)
+# Global setting: Use C++17
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Generate compile commands for clang-tidy
@@ -81,13 +81,15 @@ set (TARGETS_NODISTCONFIG
 
 # Targets included in the public distributable
 set (TARGETS_DIST
-  "yaul"  # yaul core library
+  "yaul"        # yaul core library
+  "entrypoint"  # Application entry point for WinMain glue logic
 )
 
 # Executable options: "default", "WinMain"
 # Library options: "STATIC", "SHARED", "library" (uses BUILD_SHARED_LIBS)
 set (TARGETS_DISTCONFIG
-  "library" # library
+  "library" # yaul
+  "STATIC"  # entrypoint
 )
 
 list(APPEND TARGETS ${TARGETS_NODIST})
@@ -223,7 +225,38 @@ if(WIN32)
   endif()
 endif()
 
+# Add libraries first to setup library include directives
+add_subdirectory("libraries")
+
+# Include public interface (for a library)
+include_directories("include")
+
+# Add each subdirectory
+add_subdirectory("common")
+add_subdirectory("installer-win")
+
+# Add each target subdirectory
+add_subdirectory("project-entrypoint")
+add_subdirectory("project-yaul")
+
+add_test(NAME gtest COMMAND "gtester")
+
 set(EXES "")
+
+option(BUILD_EXAMPLES "Build example applications that use yaul")
+if (BUILD_EXAMPLES)
+  set(EXAMPLES
+    "clock"
+    "hello-world"
+  )
+  add_subdirectory("examples")
+  if (WIN32)
+    foreach(EXAMPLE ${EXAMPLES})
+      set(EXE $<TARGET_FILE:${EXAMPLE}>)
+      list(APPEND EXES ${EXE})
+    endforeach()
+  endif()
+endif()
 
 if (WIN32)
   list(LENGTH TARGETS_DISTCONFIG TARGETS_DIST_LENGTH)
@@ -294,19 +327,3 @@ endif()
 # CMake targets cannot have spaces, to have spaces in the output use the OUTPUT_NAME property
 set_target_properties("installer-win" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}-installer")
 file(GENERATE OUTPUT "installerLocation.txt" CONTENT "$<TARGET_FILE:installer-win>")
-
-# Add libraries first to setup library include directives
-add_subdirectory("libraries")
-
-# Include public interface (for a library)
-include_directories("include")
-
-# Add each subdirectory
-add_subdirectory("common")
-add_subdirectory("examples")
-add_subdirectory("installer-win")
-
-# Add each target subdirectory
-add_subdirectory("project-yaul")
-
-add_test(NAME gtest COMMAND "gtester")

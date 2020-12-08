@@ -1,5 +1,4 @@
 set (SRCS
-  "logging.cpp"
 )
 
 foreach(target ${TARGETS})
@@ -8,7 +7,6 @@ endforeach()
 
 set (TEST_SRCS
   "main_test.cpp"
-  "logging_test.cpp"
 )
 
 target_sources("gtester" PRIVATE ${TEST_SRCS})

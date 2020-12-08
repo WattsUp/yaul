@@ -1,6 +1,5 @@
 set (SRCS_API
-  "yaul.cpp"
-  "log.cpp"
+  "application.cpp"
 )
 
 set (SRCS

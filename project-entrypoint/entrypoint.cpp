@@ -1,7 +1,3 @@
-#include "yaul/yaul.h"
-
-#include "common/logging.hpp"
-
 // Use WinMain for windows application entry
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN

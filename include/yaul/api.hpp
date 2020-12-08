@@ -1,5 +1,5 @@
-#ifndef _YAUL_H_
-#define _YAUL_H_
+#ifndef _YAUL_API_HPP_
+#define _YAUL_API_HPP_
 
 #ifdef _MSC_VER
 #if YAUL_CREATE_SHARED_LIBRARY
@@ -25,6 +25,4 @@ typedef unsigned __int32 uint32_t;
 #include <stdint.h>
 #endif
 
-#include "log.h"
-
-#endif /* _YAUL_H_ */
+#endif /* _YAUL_API_HPP_ */

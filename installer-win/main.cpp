@@ -1,10 +1,10 @@
 #include "common/Version.h"
-#include "common/logging.hpp"
 
-#include "Resources.h"
+#include "resources.h"
 
 #include <Windows.h>
 #include <miniz.h>
+#include <spdlog/spdlog.h>
 #include <cstdio>
 #include <exception>
 #include <fstream>
