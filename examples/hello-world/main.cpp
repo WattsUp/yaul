@@ -10,30 +10,35 @@ std::ofstream logFile;
  * @param level
  * @param msg
  */
-void logger(::yaul::LogLevel level, const char* msg) {
-  if (!logFile.is_open()) {
-    return;
-  }
-  switch (level) {
-    case ::yaul::LogLevel::debug:
-      logFile << "[ DEBUG  ] ";
-      break;
-    case ::yaul::LogLevel::info:
-      logFile << "[  INFO  ] ";
-      break;
-    case ::yaul::LogLevel::warning:
-      logFile << "[WARNING ] ";
-      break;
-    case ::yaul::LogLevel::error:
-      logFile << "[ ERROR  ] ";
-      break;
-    case ::yaul::LogLevel::critical:
-      logFile << "[CRITICAL] ";
-      break;
-    case ::yaul::LogLevel::off:
+void logger(::yaul::LogLevel level, const char* msg) noexcept {
+  try {
+    if (!logFile.is_open()) {
       return;
+    }
+    switch (level) {
+      case ::yaul::LogLevel::debug:
+        logFile << "[ DEBUG  ] ";
+        break;
+      case ::yaul::LogLevel::info:
+        logFile << "[  INFO  ] ";
+        break;
+      case ::yaul::LogLevel::warning:
+        logFile << "[WARNING ] ";
+        break;
+      case ::yaul::LogLevel::error:
+        logFile << "[ ERROR  ] ";
+        break;
+      case ::yaul::LogLevel::critical:
+        logFile << "[CRITICAL] ";
+        break;
+      case ::yaul::LogLevel::off:
+        return;
+    }
+    logFile << msg << std::endl;
+  } catch (const std::exception& e) {
+    puts("Failed to log a message to log file\n");
+    puts(e.what());
   }
-  logFile << msg << std::endl;
 }
 
 /**
@@ -50,15 +55,14 @@ int main(int argc, char* argv[]) {
     puts("Failed to open log file\n");
   }
   ::yaul::ApplicationSettings settings;
-  settings.logger          = logger;
-  settings.applicationName = "Hello World Application";
-  auto app                 = ::yaul::Application(argc, argv, settings);
+  settings.logger = logger;
+  auto app        = ::yaul::Application(argc, argv, settings);
+
   try {
-    logFile.close();
-  } catch (std::exception& e) {
-    puts("Failed to close log file\n");
+    ::yaul::Window window = app.addWindow("unique window id");
+  } catch (const std::exception& e) {
+    logger(yaul::LogLevel::critical, e.what());
   }
-  // ::yaul::Window window = ::yaul::addWindow("unique window id");
 
   // ::yaul::String dialog = window.addString("dialog", "");
 
@@ -69,5 +73,10 @@ int main(int argc, char* argv[]) {
 
   // window.close();
   // ::yaul::exit();
+  try {
+    logFile.close();
+  } catch (std::exception& e) {
+    puts("Failed to close log file\n");
+  }
   return 0;
 }

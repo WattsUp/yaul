@@ -1,7 +1,9 @@
 #ifndef _YAUL_LOGGER_HPP_
 #define _YAUL_LOGGER_HPP_
 
-#include "yaul/log.hpp"
+#include "yaul/common.hpp"
+
+#include "string.hpp"
 
 namespace yaul {
 
@@ -32,9 +34,9 @@ class Logger {
    * @param level to log message
    * @param msg to log
    */
-  inline void log(LogLevel level, const char* msg) {
+  inline void log(LogLevel level, const string& msg) {
     if (instance().loggerFunction != nullptr) {
-      instance().loggerFunction(level, msg);
+      instance().loggerFunction(level, msg.c_str());
     }
   }
 

@@ -7,10 +7,6 @@ foreach(EXAMPLE ${EXAMPLES})
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE}/examples"
   )
 
-  add_custom_command(TARGET ${EXAMPLE} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-          "$<TARGET_FILE:yaul>" "$<TARGET_FILE_DIR:${EXAMPLE}>")
-
   target_link_libraries(${EXAMPLE} PRIVATE "yaul" "entrypoint")
 endforeach()
 

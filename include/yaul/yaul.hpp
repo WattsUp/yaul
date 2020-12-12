@@ -2,6 +2,7 @@
 #define _YAUL_HPP_
 
 #include "application.hpp"
-#include "log.hpp"
+#include "common.hpp"
+#include "window.hpp"
 
 #endif /* _YAUL_HPP_ */
