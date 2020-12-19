@@ -1,29 +1,13 @@
-#include "yaul/window.hpp"
+#include <yaul/window.hpp>
 
+#include "impl/window.hpp"
 #include "logger.hpp"
 
 namespace yaul {
 
-class Window::Impl {
- public:
-  explicit Impl(const char* id);
-};
+Window::Window(const char* id) noexcept : pImpl(new impl::Window(id)) {}
 
-/**
- * @brief Construct a new Window::Impl object
- * Implementation for pimpl design
- *
- */
-Window::Impl::Impl(const char* id) {
-  Logger::instance().log(LogLevel::debug, "New window");
-  Logger::instance().log(LogLevel::debug, id);
-}
-
-/******************************* pimpl Wrapper ********************************/
-
-Window::Window(const char* id) : pImpl(new Impl(id)) {}
-
-Window::~Window() {
+Window::~Window() noexcept {
   delete pImpl;
 }
 
@@ -42,13 +26,18 @@ Window& Window::operator=(Window&& o) noexcept {
   return *this;
 }
 
-Window::Window(const Window& o) : pImpl(new Impl(*o.pImpl)) {}
+Window::Window(const Window& o) noexcept : pImpl(new impl::Window(*o.pImpl)) {}
 
-Window& Window::operator=(const Window& o) {
+Window& Window::operator=(const Window& o) noexcept {
   if (this != &o) {
-    pImpl = new Impl(*o.pImpl);  // NOLINT (cppcoreguidelines-owning-memory)
+    // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
+    pImpl = new impl::Window(*o.pImpl);
   }
   return *this;
+}
+
+void Window::show(bool visible) noexcept {
+  pImpl->show(visible);
 }
 
 }  // namespace yaul

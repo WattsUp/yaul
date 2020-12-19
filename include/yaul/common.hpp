@@ -69,7 +69,7 @@ class Result {
    * Contains no message
    *
    */
-  Result() {}
+  Result() noexcept {}
 
   /**
    * @brief Construct a new unsuccessful Result object
@@ -77,7 +77,7 @@ class Result {
    *
    * @param message explation message to copy into result
    */
-  explicit Result(const char* message) {
+  explicit Result(const char* message) noexcept(false) {
     size_t len  = strlen(message) + 1;
     msg         = new char[len];  // NOLINT (cppcoreguidelines-owning-memory)
     errno_t err = strcpy_s(msg, len, message);
@@ -87,7 +87,7 @@ class Result {
     }
   }
 
-  ~Result() { delete[] msg; }
+  ~Result() noexcept { delete[] msg; }
 
   Result(Result&& result) noexcept {
     msg        = result.msg;
@@ -113,9 +113,9 @@ class Result {
    * @return true if this result contains an explanatory message
    * @return false if this result has no message therefore successful
    */
-  inline bool failed() const { return msg != nullptr; }
+  inline bool failed() const noexcept { return msg != nullptr; }
 
-  inline operator char*() const { return msg; }
+  inline operator char*() const noexcept { return msg; }
 
  private:
   char* msg = nullptr;

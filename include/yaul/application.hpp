@@ -6,6 +6,10 @@
 
 namespace yaul {
 
+namespace impl {
+class Application;
+}
+
 /**
  * @brief Application settings
  *
@@ -50,8 +54,7 @@ class YAUL_API Application {
  private:
   Window apiAddWindow(const char* id, Result& r) noexcept;
 
-  class Impl;
-  Impl* pImpl = nullptr;
+  impl::Application* pImpl = nullptr;
 };
 
 }  // namespace yaul

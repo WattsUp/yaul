@@ -1,58 +1,17 @@
-#include "yaul/application.hpp"
+#include <yaul/application.hpp>
 
+#include "impl/application.hpp"
 #include "logger.hpp"
-#include "string.hpp"
 
 namespace yaul {
-
-class Application::Impl {
- public:
-  // NOLINTNEXTLINE (cppcoreguidelines-avoid-c-arrays)
-  Impl(int argc, char* argv[], const ApplicationSettings& settings);
-
-  Window addWindow(const string& id);
-
- private:
-  std::list<Window*> windows;
-};
-
-/**
- * @brief Construct a new Application::Impl object
- * Implementation for pimpl design
- *
- * @param argc command line argument count
- * @param argv command line arguments
- * @param settings of the application
- */
-Application::Impl::Impl(
-    int argc,
-    char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
-    const ApplicationSettings& settings) {
-  Logger::instance().setLogger(settings.logger);
-
-  for (int i = 0; i < argc; ++i) {
-    Logger::instance().log(LogLevel::debug, argv[i]);
-  }
-  // printf("Logger 0x%08X\n", (unsigned int)settings.logger);
-}
-
-Window Application::Impl::addWindow(const string& id) {
-  Logger::instance().log(LogLevel::debug, "ID: " + id);
-  // throw std::runtime_error("Error adding window");
-  Window window(id.c_str());
-  windows.push_back(&window);
-  return window;
-}
-
-/******************************* pimpl Wrapper ********************************/
 
 Application::Application(
     int argc,
     char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
     const ApplicationSettings& settings) noexcept
-    : pImpl(new Impl(argc, argv, settings)) {}
+    : pImpl(new impl::Application(argc, argv, settings)) {}
 
-Application::~Application() {
+Application::~Application() noexcept {
   delete pImpl;
 }
 
@@ -72,11 +31,12 @@ Application& Application::operator=(Application&& o) noexcept {
 }
 
 Application::Application(const Application& o) noexcept
-    : pImpl(new Impl(*o.pImpl)) {}
+    : pImpl(new impl::Application(*o.pImpl)) {}
 
 Application& Application::operator=(const Application& o) noexcept {
   if (this != &o) {
-    pImpl = new Impl(*o.pImpl);  // NOLINT (cppcoreguidelines-owning-memory)
+    // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
+    pImpl = new impl::Application(*o.pImpl);
   }
   return *this;
 }

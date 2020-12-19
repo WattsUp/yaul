@@ -9,13 +9,13 @@ An application is programmed in C++. The GUI is described in XML files and style
 ### C++ ###
 From a C++ point of view, incorporating yaul is a few lines. The first step is to initialize the library and create a window. The following code snippet creates initializes yaul with a friendly application name (seen in Task Manager). It then creates a window with a unique ID. This id is used to refer to the same components across the three file types. After this execution a window will become visible to the user with the components and layout described in the other files. It runs its own thread to update and redraw the screen as well as manage any inputs.
 ```C++
-::yaul::initialize("Hello world application");
-::yaul::window window = ::yaul::addWindow("unique window id");
+auto app = ::yaul::Application(argc, argv, settings);
+auto window = app.addWindow("unique window id");
 ```
 
-The next step is to modify the window. The following code snippet adds an empty string to the window (since `"dialog"` is already added to the window via the XML file, this statement just gets a reference to it and makes sure it is empty). It then sets the string to "Hello world!" one letter at a time. As soon as the string object is mutated the GUI updates on the next redraw.
+The next step is to modify the window. The following code snippet adds an empty string to the window (since `"dialog"` is already added to the window via the XML file, this statement just gets a reference to it and makes sure it is empty). It then sets the text to "Hello world!" one letter at a time. As soon as the text object is mutated the GUI updates on the next redraw.
 ```C++
-::yaul::string dialog = window.addString("dialog", "");
+auto dialog = window.addText("dialog", "");
 
 for (char c : "Hello world!") {
   dialog += c;
@@ -24,14 +24,14 @@ for (char c : "Hello world!") {
 ```
 An application can exist without the use of XML/CSS files by explicitly describing elements in C++. The following code snippet has the same result as the XML and CSS examples.
 ```C++
-::yaul::window window = ::yaul::addWindow("unique window id");
+auto window = ::yaul::addWindow("unique window id");
 window.setTitle("Hello World Title");
 
-window.addString(nullptr, "yaul says")
+window.addText(nullptr, "yaul says")
   .setColor(::yaul::color::BLUE)
   .setFont(::yaul::unit::dp(48.0));
 
-::yaul::string dialog = window.addString("dialog", "")
+auto dialog = window.addText("dialog", "")
   .setColor(::yaul::color::BLUE)
   .setFont(::yaul::unit::dp(48.0))
   .setTextDecoration(::yaul::textDecoration::UNDERLINE);
@@ -106,3 +106,15 @@ For each window, yaul has an `updateView` and `handleEvents` method. The former 
 By default yaul will use the platform's default graphics API. DirectX for Windows, OpenGL for Linux, and Metal for Mac. yaul is also compatible with Vulkan. For platforms with multiple graphics APIs, a specific one may be explicitly specified. Hardware acceleration can be disabled to force CPU rendering.
 
 yaul is able to be integrated into complex 3D applications such as CAD or games. The UI can overlay on top of a 3D scene and/or yaul can output to textures on 3D objects.
+
+## Library Interface ##
+### PImpl ###
+To allow dynamic linking with backwards compatibility, the ABI remains stable though a PImpl (pointer to implementation) design. The user application creates a lightweight object that contains public functions that act on the private object found via the pointer to implementation.
+
+The two classes `yaul::Application` and `yaul::Window` directly represent the private object. Meaning when those user application side object get destructed, the private object will also be destructed. All elements that get added to a Window are lightweight objects representing a weak pointer to the private element in the DOM tree. As such destruction of those objects do not trigger destruction of the real private objects. The destruction happens when the elements are removed from the DOM tree.
+
+### Zero Dependencies ###
+To meet zero dependencies of the library, all data on the interface side use primitive data types. Namely strings are passed as `const char*` and expect a UTF-8 encoding. In actuality, only CPU rendering meets the zero dependency goal. Using OpenGL, DirectX, Metal, or Vulkan require those libraries but they don't count.
+
+### Exceptions ###
+Any exceptional states will throw an exception. The exception contains an explanatory message suitable for logging. To avoid discrepancies between runtime on each side of the library boundary. Any library exceptions are caught and passed via string then rethrown.

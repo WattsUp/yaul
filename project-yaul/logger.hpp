@@ -1,7 +1,7 @@
 #ifndef _YAUL_LOGGER_HPP_
 #define _YAUL_LOGGER_HPP_
 
-#include "yaul/common.hpp"
+#include <yaul/common.hpp>
 
 #include "string.hpp"
 

@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
 
   try {
     ::yaul::Window window = app.addWindow("unique window id");
+    window.show();
   } catch (const std::exception& e) {
     logger(yaul::LogLevel::critical, e.what());
   }

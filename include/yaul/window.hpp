@@ -5,25 +5,31 @@
 
 namespace yaul {
 
+namespace impl {
+class Window;
+}
+
 class YAUL_API Window {
  public:
-  /**
-   * @brief Construct a new Window object with a unique ID
-   *
-   * @param id of the window to refer to in XML/CSS
-   */
-  explicit Window(const char* id = "");
-  ~Window();
+  explicit Window(const char* id = "") noexcept;
+  ~Window() noexcept;
 
   Window(Window&& o) noexcept;
   Window& operator=(Window&& o) noexcept;
 
-  Window(const Window& o);
-  Window& operator=(const Window& o);
+  Window(const Window& o) noexcept;
+  Window& operator=(const Window& o) noexcept;
+
+  /**
+   * @brief Show this window (or hide)
+   * No effect if already visible (or hidden)
+   *
+   * @param visible true will show this window, false will hide
+   */
+  void show(bool visible = true) noexcept;
 
  private:
-  class Impl;
-  Impl* pImpl;
+  impl::Window* pImpl;
 };
 
 }  // namespace yaul

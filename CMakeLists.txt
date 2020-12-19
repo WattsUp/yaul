@@ -79,6 +79,11 @@ set (TARGETS_NODISTCONFIG
   "default" # installer-win
 )
 
+set (TARGETS_NODISTDIR
+  "common" # gtester
+  "installer-win" # installer-win
+)
+
 # Targets included in the public distributable
 set (TARGETS_DIST
   "yaul"        # yaul core library
@@ -92,10 +97,17 @@ set (TARGETS_DISTCONFIG
   "STATIC"  # entrypoint
 )
 
+set (TARGETS_DISTDIR
+  "project-yaul"        # yaul
+  "project-entrypoint"  # entrypoint
+)
+
 list(APPEND TARGETS ${TARGETS_NODIST})
 list(APPEND TARGETS ${TARGETS_DIST})
 list(APPEND TARGETS_CONFIG ${TARGETS_NODISTCONFIG})
 list(APPEND TARGETS_CONFIG ${TARGETS_DISTCONFIG})
+list(APPEND TARGETS_DIR ${TARGETS_NODISTDIR})
+list(APPEND TARGETS_DIR ${TARGETS_DISTDIR})
 
 list(LENGTH TARGETS_CONFIG TARGETS_LENGTH)
 math(EXPR TARGETS_LENGTH "${TARGETS_LENGTH} - 1")
@@ -125,6 +137,7 @@ add_custom_command(
 foreach(INDEX RANGE ${TARGETS_LENGTH})
   list(GET TARGETS ${INDEX} TARGET)
   list(GET TARGETS_CONFIG ${INDEX} CONFIG)
+  list(GET TARGETS_DIR ${INDEX} DIR)
 
   if (${CONFIG} MATCHES "^library$" OR ${CONFIG} MATCHES "^SHARED$" OR ${CONFIG} MATCHES "^STATIC$")
     if (${CONFIG} MATCHES "^library$")
@@ -160,7 +173,7 @@ foreach(INDEX RANGE ${TARGETS_LENGTH})
   endif()
 
   # Add the root as an include directory: i.e. #include "common/logging.hpp" from any level
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR})
+  target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR} ${DIR})
 
   # Set debug flag when building debug release, add a suffix to output files
   target_compile_definitions(${TARGET} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>")
@@ -231,13 +244,10 @@ add_subdirectory("libraries")
 # Include public interface (for a library)
 include_directories("include")
 
-# Add each subdirectory
-add_subdirectory("common")
-add_subdirectory("installer-win")
-
-# Add each target subdirectory
-add_subdirectory("project-entrypoint")
-add_subdirectory("project-yaul")
+foreach(DIR ${TARGETS_DIR})
+  add_subdirectory("${DIR}")
+  target_include_directories("gtester" PRIVATE "${DIR}")
+endforeach()
 
 add_test(NAME gtest COMMAND "gtester")
 
