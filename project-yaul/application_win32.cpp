@@ -6,38 +6,6 @@
 
 namespace yaul {
 
-Window* Application::Impl::addWindow(
-    const char* id,
-    Size size,
-    Window::ShowState showState) noexcept(false) {
-  // Send new window info to loop
-  NewWindowInfo windowInfo;
-  windowInfo.size      = size;
-  windowInfo.showState = showState;
-  windowInfo.id        = id;
-
-  // Wait for loop to become a message processing thread
-  std::unique_lock<std::mutex> lock(mutex);
-  cv.wait(lock, [this] { return static_cast<bool>(threadReady); });
-  newWindowInfo = &windowInfo;
-
-  // Send new window message
-  if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
-                           YAUL_WM_NEW_WINDOW, 0, 0) == 0) {
-    throw std::exception("Failed to post new window message");
-  }
-
-  // Wait for loop to create window
-  // windowInfo.complete is true once consumed
-  cv.wait(lock, [&windowInfo] { return windowInfo.complete; });
-
-  if (windowInfo.result.failed()) {
-    throw std::exception(windowInfo.result);
-  }
-
-  return windowInfo.createdWindow;
-}
-
 void Application::Impl::loop() noexcept {
   MSG msg;
   // Call PeekMessage once to identify this thread as a message processor
@@ -49,6 +17,7 @@ void Application::Impl::loop() noexcept {
     if (::GetMessageW(&msg, nullptr, 0, 0) == 0) {
       Logger::instance().log(LogLevel::critical, "WM_QUIT was received");
       running = false;
+      std::lock_guard<std::mutex> lock(mutex);
       windows.clear();
       cv.notify_all();
       return;
@@ -64,9 +33,9 @@ void Application::Impl::loop() noexcept {
 
       try {
         std::unique_ptr<Window> window(Window::createWindow(
-            newWindowInfo->size, newWindowInfo->id, newWindowInfo->showState));
+            newWindowInfo->size, "", Window::ShowState::hidden));
         newWindowInfo->createdWindow = window.get();
-        windows.emplace_back(std::move(window));
+        windows.emplace(newWindowInfo->id, std::move(window));
       } catch (const std::exception& e) {
         newWindowInfo->result = Result(e.what());
       }
@@ -75,6 +44,7 @@ void Application::Impl::loop() noexcept {
       cv.notify_all();
     } else if (msg.message == YAUL_WM_STOP_LOOP) {
       running = false;
+      std::lock_guard<std::mutex> lock(mutex);
       windows.clear();
       cv.notify_all();
       return;
@@ -84,8 +54,9 @@ void Application::Impl::loop() noexcept {
       auto itr = windows.begin();
       auto end = windows.end();
       while (itr != end) {
-        const auto& window = *itr;
+        const auto& window = itr->second;
         if (window->shouldClose()) {
+          std::lock_guard<std::mutex> lock(mutex);
           window->setShowState(Window::ShowState::hidden);
           itr = windows.erase(itr);
           cv.notify_all();

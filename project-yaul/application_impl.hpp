@@ -3,13 +3,14 @@
 
 #include <yaul/application.hpp>
 
+#include "common/string.hpp"
 #include "object_impl.hpp"
 
 #include <atomic>
-#include <list>
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <Windows.h>
@@ -75,9 +76,8 @@ class Application::Impl final : public Object::Impl {
 
   struct NewWindowInfo {
     Size size;
-    Window::ShowState showState = Window::ShowState::restore;
-    const char* id              = nullptr;
-    Window* createdWindow       = nullptr;
+    string id;
+    Window* createdWindow = nullptr;
     Result result;
     bool complete = false;
   };
@@ -87,7 +87,7 @@ class Application::Impl final : public Object::Impl {
 
   NewWindowInfo* newWindowInfo = nullptr;
 
-  std::list<std::unique_ptr<Window>> windows{};
+  std::unordered_map<string, std::unique_ptr<Window>> windows{};
 
   bool doRender                       = true;
   std::atomic<bool> running           = false;

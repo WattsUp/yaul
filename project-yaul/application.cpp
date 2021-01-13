@@ -24,6 +24,53 @@ Application::Impl::~Impl() noexcept {
   stop();
 }
 
+Window* Application::Impl::addWindow(
+    const char* id,
+    Size size,
+    Window::ShowState showState) noexcept(false) {
+  // Send new window info to loop
+  NewWindowInfo windowInfo;
+  windowInfo.size = size;
+  windowInfo.id   = string(id);
+
+  {
+    // Check for window already created
+    std::unique_lock<std::mutex> lock(mutex);
+    auto search = windows.find(windowInfo.id);
+    if (search != windows.end()) {
+      return search->second.get();
+    }
+
+    // Wait for loop to become a message processing thread
+    cv.wait(lock, [this] { return static_cast<bool>(threadReady); });
+    newWindowInfo = &windowInfo;
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    // Send new window message
+    if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
+                             YAUL_WM_NEW_WINDOW, 0, 0) == 0) {
+      throw std::exception("Failed to post new window message");
+    }
+#endif /* WIN32 */
+
+    // Wait for loop to create window
+    // windowInfo.complete is true once consumed
+    cv.wait(lock, [&windowInfo] { return windowInfo.complete; });
+  }
+
+  if (windowInfo.result.failed()) {
+    throw std::exception(windowInfo.result);
+  }
+
+  // Lookup and apply any styling from XML/CSS
+  windowInfo.createdWindow->setTitle(id);         // TODO (WattsUp) get title
+  windowInfo.createdWindow->setBorderless(true);  // Yaul draws custom a menubar
+
+  windowInfo.createdWindow->setShowState(showState);
+
+  return windowInfo.createdWindow;
+}
+
 void Application::Impl::waitForAllWindowsToClose() noexcept {
   if (windows.empty() || !running) {
     return;
