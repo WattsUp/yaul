@@ -1,5 +1,5 @@
-#ifndef _YAUL_API_HPP_
-#define _YAUL_API_HPP_
+#ifndef _YAUL_COMMON_HPP_
+#define _YAUL_COMMON_HPP_
 
 #ifdef _MSC_VER
 #if YAUL_CREATE_SHARED_LIBRARY
@@ -35,6 +35,21 @@ typedef unsigned __int32 uint32_t;
 
 namespace yaul {
 
+/**
+ * @brief Get the library version as a string
+ *
+ * @return const char* [major].[minor].[patch]
+ */
+YAUL_API const char* getVersionString();
+
+/**
+ * @brief Get the fully qualified library version as a string
+ *
+ * @return const char* [major].[minor].[patch]+['~' if modified][# commits
+ * ahead].[git SHA]
+ */
+YAUL_API const char* getVersionStringFull();
+
 /********************************** Logging ***********************************/
 
 enum class LogLevel : uint8_t {
@@ -59,6 +74,7 @@ typedef void (*logger_t)(LogLevel level, const char* msg) noexcept;
 /******************************* Error Handling *******************************/
 #include <cstring>
 #include <exception>
+#include <stdexcept>
 
 namespace yaul {
 
@@ -167,4 +183,28 @@ class Result {
 
 }  // namespace yaul
 
-#endif /* _YAUL_API_HPP_ */
+/******************************* Miscellaneous ********************************/
+
+/**
+ * @brief Decode an integer from a hex character representation
+ * '0' to '9' is 0 to 9
+ * 'a' to 'f' or 'A' to 'F' is 10 to 15
+ * Other characters will throw invalid_argument
+ *
+ * @param c hex character to decode (0123456789abcdefABCDEF)
+ * @return constexpr uint8_t value represented by the hex character
+ */
+constexpr uint8_t decodeHexChar(const char c) noexcept(false) {
+  if (c >= '0' && c <= '9') {
+    return static_cast<uint8_t>(c - '0');
+  } else if (c >= 'a' && c <= 'f') {
+    return static_cast<uint8_t>(c - 'a' + 10);
+  } else if (c >= 'A' && c <= 'F') {
+    return static_cast<uint8_t>(c - 'A' + 10);
+  } else {
+    throw std::invalid_argument(
+        "invalid character encountered while decoding hex character");
+  }
+}
+
+#endif /* _YAUL_COMMON_HPP_ */

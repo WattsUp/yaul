@@ -1,7 +1,11 @@
-add_subdirectory("impl")
+# add_subdirectory(
+#   "vg"
+# )
 
 set (SRCS_API
   "application.cpp"
+  "common.cpp"
+  "object.cpp"
   "window.cpp"
 )
 
@@ -12,6 +16,8 @@ set (SRCS_UNIX
 )
 
 set (SRCS_WIN
+  "application_win32.cpp"
+  "window_win32.cpp"
 )
 
 target_sources("yaul" PRIVATE ${SRCS} ${SRCS_API} $<IF:$<BOOL:${WIN32}>, ${SRCS_WIN}, ${SRCS_UNIX}>)

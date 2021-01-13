@@ -1,49 +1,61 @@
-#include <yaul/application.hpp>
+#include "application_impl.hpp"
 
-#include "impl/application.hpp"
-#include "logger.hpp"
+#include "common/logger.hpp"
+
+#include <condition_variable>
 
 namespace yaul {
+
+Application::Impl::Impl(
+    int argc,
+    char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
+    const ApplicationSettings& settings) noexcept {
+  Logger::instance().setLogger(settings.logger);
+
+  for (int i = 0; i < argc; ++i) {
+    Logger::instance().log(LogLevel::debug, argv[i]);
+  }
+  doRender = !settings.customRenderLoop;
+  running  = true;
+  thread   = std::make_unique<std::thread>(&Application::Impl::loop, this);
+}
+
+Application::Impl::~Impl() noexcept {
+  stop();
+}
+
+void Application::Impl::waitForAllWindowsToClose() noexcept {
+  if (windows.empty() || !running) {
+    return;
+  }
+  std::unique_lock<std::mutex> lock(mutex);
+  cv.wait(lock, [this]() { return windows.empty(); });
+}
+
+/******************************** Public Class ********************************/
 
 Application::Application(
     int argc,
     char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
     const ApplicationSettings& settings) noexcept
-    : pImpl(new impl::Application(argc, argv, settings)) {}
+    : Object(*new Application::Impl(argc, argv, settings)) {}
 
-Application::~Application() noexcept {
-  delete pImpl;
+YAUL_IMPL_DESTRUCT(Application);
+YAUL_IMPL_MOVE(Application, Object);
+
+Window* Application::apiAddWindow(const char* id,
+                                  Size size,
+                                  Window::ShowState showState,
+                                  Result& r) noexcept {
+  YAUL_EXCEPTION_WRAPPER_CATCH(
+      return dynamic_cast<Application::Impl*>(pImpl)->addWindow(id, size,
+                                                                showState),
+             r);
+  return nullptr;
 }
 
-Application::Application(Application&& o) noexcept {
-  pImpl   = o.pImpl;
-  o.pImpl = nullptr;
-}
-
-Application& Application::operator=(Application&& o) noexcept {
-  if (&o == this) {
-    return *this;
-  }
-  delete pImpl;
-  pImpl   = o.pImpl;
-  o.pImpl = nullptr;
-  return *this;
-}
-
-Application::Application(const Application& o) noexcept
-    : pImpl(new impl::Application(*o.pImpl)) {}
-
-Application& Application::operator=(const Application& o) noexcept {
-  if (this != &o) {
-    // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-    pImpl = new impl::Application(*o.pImpl);
-  }
-  return *this;
-}
-
-Window Application::apiAddWindow(const char* id, Result& r) noexcept {
-  YAUL_EXCEPTION_WRAPPER_CATCH(return pImpl->addWindow(string(id)), r);
-  return Window();
+void Application::waitForAllWindowsToClose() noexcept {
+  dynamic_cast<Application::Impl*>(pImpl)->waitForAllWindowsToClose();
 }
 
 }  // namespace yaul

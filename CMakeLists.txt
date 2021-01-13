@@ -46,6 +46,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Generate compile commands for clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
+# Clang on Windows gets confused with main and WinMain
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND WIN32 )
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker /SUBSYSTEM:WINDOWS")
+endif()
+
 if( WIN32 )
   # define UNICODE and_UNICODE definition on Windows
   # Both definitions are required
@@ -176,7 +181,7 @@ foreach(INDEX RANGE ${TARGETS_LENGTH})
   target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR} ${DIR})
 
   # Set debug flag when building debug release, add a suffix to output files
-  target_compile_definitions(${TARGET} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>")
+  target_compile_definitions(${TARGET} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" "NOMINMAX")
   set_target_properties(${TARGET} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 
   # Make the version file a dependency so it always gets updated
@@ -258,6 +263,7 @@ if (BUILD_EXAMPLES)
   set(EXAMPLES
     "clock"
     "hello-world"
+    "3d-and-vg"
   )
   add_subdirectory("examples")
   if (WIN32)

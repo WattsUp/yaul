@@ -90,6 +90,8 @@ def checkSemver(cmd, minimum):
       r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)",
       output,
       flags=re.S)
+  if matches is None:
+    print(output)
   version = Version(matches.expand(r"\1.\2.\3"))
 
   return version >= Version(minimum)

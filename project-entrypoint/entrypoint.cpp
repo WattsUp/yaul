@@ -1,5 +1,5 @@
 // Use WinMain for windows application entry
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <shellapi.h>
@@ -33,11 +33,12 @@ extern "C" int APIENTRY WinMain(HINSTANCE /* hInstance */,
   }
 
   // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-  char** argv = new char*[argc + 1];
+  char** argv = new char*[static_cast<size_t>(argc + 1)];
   for (int i = 0; i != argc; ++i) {
     int len = WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, nullptr, 0, nullptr,
                                   nullptr);
-    argv[i] = new char[len];  // NOLINT (cppcoreguidelines-owning-memory)
+    // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
+    argv[i] = new char[static_cast<size_t>(len)];
     WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, argv[i], len, nullptr,
                         nullptr);
   }

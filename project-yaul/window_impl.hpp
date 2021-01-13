@@ -1,60 +1,48 @@
-#ifndef _YAUL_WINDOW_HPP_
-#define _YAUL_WINDOW_HPP_
+#ifndef _YAUL_WINDOW_IMPL_HPP_
+#define _YAUL_WINDOW_IMPL_HPP_
 
-#include <yaul/dimensions.hpp>
-#include <yaul/object.hpp>
+#include <yaul/window.hpp>
 
-#include <memory>
+#include "common/string.hpp"
+#include "object_impl.hpp"
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include <Windows.h>
+#endif /* WIN32 */
 
 namespace yaul {
 
-class YAUL_API Window final : public Object {
+class Window::Impl final : public Object::Impl {
  public:
   /**
-   * @enum Window show state
-   *
-   */
-  enum class ShowState : uint8_t {
-    hidden = 0,    ///< Hide the window, not available on the taskbar. Other
-                   ///< states revert this
-    minimize = 1,  ///< Minimize the window to the taskbar
-    maximize = 2,  ///< Maximize the window to fill the current monitor
-    restore  = 3,  ///< Restore the window to its previous size and position
-  };
-
-  /**
-   * @brief Construct a new Window with given parameters
+   * @brief Construct a new Window implementation object with default values
    *
    * @param size in pixels (total size including border)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
-   * @return std::unique_ptr<Window> pointer to window object
-   *
-   * @throws std::exception if failed to create window
+   * @throws std::exception if failed to create native window
    */
-  static std::unique_ptr<Window> createWindow(
-      Size size,
-      const char* title,
-      ShowState state = ShowState::restore) noexcept(false) {
-    Result r;
-    std::unique_ptr<Window> o(apiCreateWindow(size, title, state, r));
-    if (r.failed())
-      throw std::exception(r);
-    return o;
-  }
+  Impl(Size size,
+       const char* title,
+       ShowState state = ShowState::restore) noexcept(false);
 
-  YAUL_DEFINE_DESTRUCT(Window);
-  YAUL_NO_COPY(Window);
-  YAUL_DEFINE_MOVE(Window);
+  YAUL_DEFINE_DESTRUCT(Impl);
+  YAUL_NO_COPY(Impl);
+  YAUL_NO_MOVE(Impl);
 
-  class Impl;
+  /**
+   * @brief Create a the native window via OS specific functions
+   *
+   * @throws std::exception if failed to create native window
+   */
+  void createNativeWindow(Size size) noexcept(false);
 
   /**
    * @brief Check if a close signal is present for the window
    *
    * @return true when the window has been signaled to close, false otherwise
    */
-  bool shouldClose() noexcept;
+  bool shouldClose() const noexcept;
 
   /**
    * @brief Render any pending commands to the backbuffer then swap to present
@@ -69,12 +57,6 @@ class YAUL_API Window final : public Object {
    *
    */
   void pollEvents() noexcept;
-
-  /**
-   * @brief Request the window be closed
-   *
-   */
-  void closeRequest() noexcept;
 
   /**
    * @brief Set the size of the window, both dimensions must be non-zero
@@ -164,34 +146,41 @@ class YAUL_API Window final : public Object {
    */
   void setShowState(ShowState state) noexcept;
 
- private:
   /**
-   * @brief Construct a new Window with given parameters
+   * @brief Request the window be closed
    *
-   * @param size in pixels (total size including border)
-   * @param title to display on titlebar
-   * @param state true will show the window, false will not, use setShowState to
-   *
-   * @throws std::exception if failed to create window
    */
-  Window(Size size, const char* title, ShowState state) noexcept(false);
+  inline void closeRequest() noexcept { closeFlag = true; }
 
-  /**
-   * @brief Construct a new Window with given parameters
-   *
-   * @param size in pixels (total size including border)
-   * @param title to display on titlebar
-   * @param state true will show the window, false will not, use setShowState to
-   * @param r result object returned
-   * @return Window* pointer to window object or nullptr if failed (see result),
-   * take ownership
-   */
-  static Window* apiCreateWindow(Size size,
-                                 const char* title,
-                                 ShowState state,
-                                 Result& r) noexcept;
+ private:
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  typedef HWND NativeWindow;
+  static HINSTANCE hInstance;
+#endif /* WIN32 */
+
+  NativeWindow nativeWindow = nullptr;
+
+  string title;
+
+  bool closeFlag  = false;
+  bool resizable  = true;
+  bool borderless = false;
+  bool draggable  = false;
+
+  Edges resizingBorder {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+        ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+        ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+        ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)
+#endif /* WIN32 */
+  };
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  int draggingAreaBottom = ::GetSystemMetrics(SM_CYMENU);
+#endif /* WIN32 */
 };
 
 }  // namespace yaul
 
-#endif /* _YAUL_WINDOW_HPP_ */
+#endif /* _YAUL_WINDOW_IMPL_HPP_ */

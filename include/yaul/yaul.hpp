@@ -1,9 +1,11 @@
 #ifndef _YAUL_HPP_
 #define _YAUL_HPP_
 
-#include "application.hpp"
-#include "common.hpp"
-#include "window.hpp"
+#include <yaul/application.hpp>
+#include <yaul/common.hpp>
+#include <yaul/window.hpp>
+
+// #include <yaul/vg/vg.hpp>
 
 // // Top-level namespace declarations
 // namespace yaul {

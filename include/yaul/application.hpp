@@ -1,25 +1,26 @@
 #ifndef _YAUL_APPLICATION_HPP_
 #define _YAUL_APPLICATION_HPP_
 
-#include "common.hpp"
-#include "window.hpp"
+#include <yaul/object.hpp>
+#include <yaul/window.hpp>
 
 namespace yaul {
-
-namespace impl {
-class Application;
-}
 
 /**
  * @brief Application settings
  *
  * @param logger function to direct log statements to
+ * @param customRenderLoop yaul will not call Window.render and it is up to the
+ * user to
  */
 struct ApplicationSettings {
-  logger_t logger = nullptr;
+  logger_t logger       = nullptr;
+  bool customRenderLoop = false;
 };
 
-class YAUL_API Application {
+constexpr Size defaultWindowSize{640, 480};
+
+class YAUL_API Application final : public Object {
  public:
   /**
    * @brief Construct a yaul application
@@ -31,30 +32,44 @@ class YAUL_API Application {
   Application(int argc,
               char* argv[],
               const ApplicationSettings& settings) noexcept;
-  ~Application() noexcept;
 
-  Application(Application&& o) noexcept;
-  Application& operator=(Application&& o) noexcept;
+  YAUL_DEFINE_DESTRUCT(Application);
+  YAUL_NO_COPY(Application);
+  YAUL_DEFINE_MOVE(Application);
 
-  Application(const Application& o) noexcept;
-  Application& operator=(const Application& o) noexcept;
+  class Impl;
 
   /**
    * @brief Add a window to the application
    *
    * @param id of the window to refer to in XML/CSS
-   * @return Window object handle
+   * @param size of the window, any XML/CSS styling will override this
+   * immediately
+   * @param showState of the window upon creation (any XML/CSS styling will be
+   * applied first). Use Window::ShowState::hidden to style programmatically
+   * before displaying
+   * @return Window* weak pointer to window (application object owns memory)
    *
    * @throw std::exception on failure
    */
-  Window addWindow(const char* id) noexcept(false) {
-    YAUL_EXCEPTION_WRAPPER_THROW(Window, apiAddWindow, id);
+  Window* addWindow(const char* id,
+                    Size size = defaultWindowSize,
+                    Window::ShowState showState =
+                        Window::ShowState::restore) noexcept(false) {
+    YAUL_EXCEPTION_WRAPPER_THROW(Window*, apiAddWindow, id, size, showState);
   }
 
- private:
-  Window apiAddWindow(const char* id, Result& r) noexcept;
+  /**
+   * @brief Blocking call returned once all windows have closed
+   *
+   */
+  void waitForAllWindowsToClose() noexcept;
 
-  impl::Application* pImpl = nullptr;
+ private:
+  Window* apiAddWindow(const char* id,
+                       Size size,
+                       Window::ShowState showState,
+                       Result& r) noexcept;
 };
 
 }  // namespace yaul
