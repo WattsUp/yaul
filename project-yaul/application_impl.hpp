@@ -5,6 +5,7 @@
 
 #include "common/string.hpp"
 #include "object_impl.hpp"
+#include "window_impl.hpp"
 
 #include <atomic>
 #include <memory>
@@ -14,9 +15,6 @@
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <Windows.h>
-
-#define YAUL_WM_NEW_WINDOW (WM_USER + 0)
-#define YAUL_WM_STOP_LOOP (WM_USER + 1)
 
 #endif /* WIN32 */
 

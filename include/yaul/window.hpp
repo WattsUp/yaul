@@ -25,7 +25,7 @@ class YAUL_API Window final : public Object {
   /**
    * @brief Construct a new Window with given parameters
    *
-   * @param size in pixels (total size including border)
+   * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
    * @return std::unique_ptr<Window> pointer to window object
@@ -86,7 +86,7 @@ class YAUL_API Window final : public Object {
    * only applicable if window has a border, see setBorderless
    * @return true if size was successfully adjusted, false otherwise
    */
-  bool setSize(Size size, bool innerSize = false) noexcept;
+  bool setSize(Size size, bool innerSize = true) noexcept;
 
   /**
    * @brief Get the size of the window
@@ -95,7 +95,7 @@ class YAUL_API Window final : public Object {
    * border if present
    * @return Size in pixels
    */
-  Size getSize(bool innerSize = false) const noexcept;
+  Size getSize(bool innerSize = true) const noexcept;
 
   /**
    * @brief Set the position of the window
@@ -139,6 +139,14 @@ class YAUL_API Window final : public Object {
   void setBorderless(bool borderless) noexcept;
 
   /**
+   * @brief Set the window to have a shadow or not when borderless
+   *
+   * @param shadow true will draw a shadow around the window when borderless,
+   * false will not
+   */
+  void setBorderlessShadow(bool shadow) noexcept;
+
+  /**
    * @brief Set the window draggable or not to change its position
    *
    * @param draggable true will allow dragging via dragging area, see
@@ -168,7 +176,7 @@ class YAUL_API Window final : public Object {
   /**
    * @brief Construct a new Window with given parameters
    *
-   * @param size in pixels (total size including border)
+   * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
    *
@@ -179,7 +187,7 @@ class YAUL_API Window final : public Object {
   /**
    * @brief Construct a new Window with given parameters
    *
-   * @param size in pixels (total size including border)
+   * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
    * @param r result object returned

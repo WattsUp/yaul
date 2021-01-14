@@ -7,11 +7,12 @@ namespace yaul {
 Window::Impl::Impl(Size size,
                    const char* title,
                    ShowState state) noexcept(false)
-    : title(title) {
+    : title(title), showState(state) {
   if (size.width == 0 || size.height == 0) {
     throw std::invalid_argument("Both dimensions of size must be non-zero");
   }
-  createNativeWindow(size);
+  createNativeWindow();
+  setSize(size, true);
   setTitle(title);
   setShowState(state);
 }
@@ -46,28 +47,32 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
     return false;
   }
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  if (innerSize) {
-    // TODO (WattsUp)
-    size.width += 10;
-    size.height += 10;
+  if (innerSize && !borderless) {
+    RECT rect{0, 0, size.width, size.height};
+    auto style =
+        static_cast<DWORD>(::GetWindowLongPtrW(nativeWindow, GWL_STYLE));
+    if (::AdjustWindowRect(&rect, style, FALSE) == 0) {
+      return false;
+    }
+    size = {rect.right - rect.left, rect.bottom - rect.top};
   }
   return ::SetWindowPos(nativeWindow, HWND_TOP, 0, 0, size.width, size.height,
-                        SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER) != 0;
+                        SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER |
+                            SWP_ASYNCWINDOWPOS) != 0;
 #endif /* WIN32 */
 }
 
 Size Window::Impl::getSize(bool innerSize) const noexcept {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   RECT rect;
-  ::GetWindowRect(nativeWindow, &rect);
-  Size size = {rect.right - rect.left, rect.bottom - rect.top};
-  if (innerSize) {
-    // TODO (WattsUp)
-    size.width -= 10;
-    size.height -= 10;
+  if (borderless || innerSize) {
+    ::GetClientRect(nativeWindow, &rect);
+  } else {
+    ::GetWindowRect(nativeWindow, &rect);
   }
-  return size;
+  Size size = {rect.right - rect.left, rect.bottom - rect.top};
 #endif /* WIN32 */
+  return size;
 }
 
 bool Window::Impl::setPosition(Position position, int monitor) noexcept {
@@ -76,58 +81,154 @@ bool Window::Impl::setPosition(Position position, int monitor) noexcept {
     // TODO (WattsUp)
     position.left -= 1920;
   }
-  return ::SetWindowPos(nativeWindow, HWND_TOP, position.left, position.top, 0,
-                        0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER) != 0;
+  return ::SetWindowPos(
+             nativeWindow, HWND_TOP, position.left, position.top, 0, 0,
+             SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS) !=
+         0;
 #endif /* WIN32 */
 }
 
-void Window::Impl::setTitle(const char* title) noexcept {
+void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
   this->title = string(title);
+  if (lockMutex) {
+    mutex.unlock();
+  }
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   WideChar wTitle(title);
   ::SetWindowTextW(nativeWindow, wTitle.c_str());
 #endif /* WIN32 */
 }
 
-void Window::Impl::setResizable(bool resizable) noexcept {
+void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
   this->resizable = resizable;
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
-void Window::Impl::setResizingBorder(Edges border) noexcept {
+void Window::Impl::setResizingBorder(Edges border, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
   resizingBorder = border;
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
-void Window::Impl::setBorderless(bool borderless) noexcept {
+void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
+  if (this->borderless == borderless) {
+    // No change
+    return;
+  }
+  if (lockMutex) {
+    mutex.lock();
+  }
   this->borderless = borderless;
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  Size innerSize = getSize(true);
+
+  WindowStyle style = WindowStyle::windowed;
+  if (borderless) {
+    style = compositionEnabled() ? WindowStyle::aeroBorderless
+                                 : WindowStyle::basicBorderless;
+  }
+  ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, static_cast<LONG>(style));
+
+  // Restore shadow or not
+  setBorderlessShadow(borderlessShadow, false);
+
+  // Alert window manager frame has changed and preserve client area
+  setSize(innerSize, true);
 #endif /* WIN32 */
+
+  setShowState(showState, false);
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
-void Window::Impl::setDraggable(bool draggable) noexcept {
+void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
+  this->borderlessShadow = shadow;
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  if (compositionEnabled()) {
+    if (!borderless) {
+      shadow = false;
+    }
+    // Note GDI cannot paint this margin away, use other graphics to swap frame
+    // buffers
+    if (shadow) {
+      static const MARGINS margins{1, 1, 1, 1};
+      ::DwmExtendFrameIntoClientArea(nativeWindow, &margins);
+    } else {
+      static const MARGINS margins{0, 0, 0, 0};
+      ::DwmExtendFrameIntoClientArea(nativeWindow, &margins);
+    }
+  }
+#endif /* WIN32 */
+
+  if (lockMutex) {
+    mutex.unlock();
+  }
+}
+
+void Window::Impl::setDraggable(bool draggable, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
   this->draggable = draggable;
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
-void Window::Impl::setDraggingArea(int bottom) noexcept {
+void Window::Impl::setDraggingArea(int bottom, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
   this->draggingAreaBottom = bottom;
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
-void Window::Impl::setShowState(ShowState state) noexcept {
+void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
+  showState = state;
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   switch (state) {
     case ShowState::hidden:
-      ShowWindow(nativeWindow, SW_HIDE);
+      ShowWindowAsync(nativeWindow, SW_HIDE);
       break;
     case ShowState::minimize:
-      ShowWindow(nativeWindow, SW_SHOWMINIMIZED);
+      ShowWindowAsync(nativeWindow, SW_SHOWMINIMIZED);
       break;
     case ShowState::maximize:
-      ShowWindow(nativeWindow, SW_SHOWMAXIMIZED);
+      ShowWindowAsync(nativeWindow, SW_SHOWMAXIMIZED);
       break;
     case ShowState::restore:
-      ShowWindow(nativeWindow, SW_RESTORE);
+      ShowWindowAsync(nativeWindow, SW_RESTORE);
       break;
   }
 #endif /* WIN32 */
+
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
 /******************************** Public Class ********************************/
@@ -189,6 +290,10 @@ void Window::setResizingBorder(Edges border) noexcept {
 
 void Window::setBorderless(bool borderless) noexcept {
   dynamic_cast<Window::Impl*>(pImpl)->setBorderless(borderless);
+}
+
+void Window::setBorderlessShadow(bool shadow) noexcept {
+  dynamic_cast<Window::Impl*>(pImpl)->setBorderlessShadow(shadow);
 }
 
 void Window::setDraggable(bool draggable) noexcept {

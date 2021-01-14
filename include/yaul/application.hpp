@@ -40,7 +40,8 @@ class YAUL_API Application final : public Object {
   class Impl;
 
   /**
-   * @brief Add a window to the application
+   * @brief Add a window to the application. If id already exists, this function
+   * returns that window and does not create a new one
    *
    * @param id of the window to refer to in XML/CSS
    * @param size of the window, any XML/CSS styling will override this
