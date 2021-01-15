@@ -108,6 +108,16 @@ class YAUL_API Window final : public Object {
   bool setPosition(Position position, int monitor = 0) noexcept;
 
   /**
+   * @brief Set the window to be fullscreen or not
+   *
+   * @param fullscreen true will make the window fill the monitor, false will
+   * restore it to its previous state
+   * @param monitor to full screen into, default is the current one the window
+   * is on
+   */
+  void setFullscreen(bool fullscreen, int monitor = 0) noexcept;
+
+  /**
    * @brief Set the title of the window.
    *
    * @param title
@@ -147,17 +157,9 @@ class YAUL_API Window final : public Object {
   void setBorderlessShadow(bool shadow) noexcept;
 
   /**
-   * @brief Set the window draggable or not to change its position
-   *
-   * @param draggable true will allow dragging via dragging area, see
-   * setDraggingArea
-   */
-  void setDraggable(bool draggable) noexcept;
-
-  /**
    * @brief Set the dragging area of the window for changing its position. A
    * bordered window default to the title bar. Area defined by rectangle filling
-   * the top with a bottom edge defined by distance from top. Dragging is
+   * the top area with a bottom edge defined by distance from top. Dragging is
    * lower than other interactions (buttons, resizing) such that those regions
    * mask this draggable area.
    *

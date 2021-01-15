@@ -18,6 +18,10 @@ Application::Impl::Impl(
   doRender = !settings.customRenderLoop;
   running  = true;
   thread   = std::make_unique<std::thread>(&Application::Impl::loop, this);
+
+  // Wait for loop to start up
+  std::unique_lock<std::mutex> lock(mutex);
+  cv.wait(lock, [this] { return static_cast<bool>(threadReady); });
 }
 
 Application::Impl::~Impl() noexcept {
@@ -41,8 +45,6 @@ Window* Application::Impl::addWindow(
       return search->second.get();
     }
 
-    // Wait for loop to become a message processing thread
-    cv.wait(lock, [this] { return static_cast<bool>(threadReady); });
     newWindowInfo = &windowInfo;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

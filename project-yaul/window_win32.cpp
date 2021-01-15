@@ -62,7 +62,7 @@ LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
     // clang-format on
   }
 
-  if (draggable && (cursor.y < (window.top + draggingAreaBottom))) {
+  if (cursor.y < (window.top + draggingAreaBottom)) {
     return HTCAPTION;
   }
 
@@ -93,9 +93,22 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
     } break;
     case WM_NCHITTEST: {
       std::lock_guard<std::mutex> lock(window->mutex);
-      if (window->borderless) {
+      if (window->borderless && !window->fullscreen) {
         return window->hitTest(
             POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
+      }
+    } break;
+    case WM_NCACTIVATE: {
+      std::lock_guard<std::mutex> lock(window->mutex);
+      if (window->borderless && window->fullscreen) {
+        // No activation changes when fullscreened
+        // Without, it will have a basic title bar get painted upon deactivation
+        return FALSE;
+      }
+      if (!compositionEnabled()) {
+        // Prevents window frame reappearing on window activation
+        // in "basic" theme, where no aero shadow is present.
+        return TRUE;
       }
     } break;
     case WM_CREATE:
@@ -129,19 +142,25 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
     case WM_SYSKEYDOWN: {
       switch (wParam) {
         case VK_F8: {
-          window->setDraggable(!window->draggable, false);
+          window->setFullscreen(!window->fullscreen, 0, false);
           return 0;
         }
         case VK_F9: {
-          window->setResizable(!window->resizable, false);
+          if (!window->fullscreen) {
+            window->setResizable(!window->resizable, false);
+          }
           return 0;
         }
         case VK_F10: {
-          window->setBorderless(!window->borderless, false);
+          if (!window->fullscreen) {
+            window->setBorderless(!window->borderless, false);
+          }
           return 0;
         }
         case VK_F11: {
-          window->setBorderlessShadow(!window->borderlessShadow, false);
+          if (!window->fullscreen) {
+            window->setBorderlessShadow(!window->borderlessShadow, false);
+          }
           return 0;
         }
       }

@@ -15,6 +15,10 @@ Window::Impl::Impl(Size size,
   setSize(size, true);
   setTitle(title);
   setShowState(state);
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  fullscreenPrePlacement.length = sizeof(WINDOWPLACEMENT);
+#endif /* WIN32 */
 }
 
 Window::Impl::~Impl() noexcept {
@@ -56,9 +60,9 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
     }
     size = {rect.right - rect.left, rect.bottom - rect.top};
   }
-  return ::SetWindowPos(nativeWindow, HWND_TOP, 0, 0, size.width, size.height,
+  return ::SetWindowPos(nativeWindow, nullptr, 0, 0, size.width, size.height,
                         SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER |
-                            SWP_ASYNCWINDOWPOS) != 0;
+                            SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
 #endif /* WIN32 */
 }
 
@@ -81,11 +85,66 @@ bool Window::Impl::setPosition(Position position, int monitor) noexcept {
     // TODO (WattsUp)
     position.left -= 1920;
   }
-  return ::SetWindowPos(
-             nativeWindow, HWND_TOP, position.left, position.top, 0, 0,
-             SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS) !=
-         0;
+  return ::SetWindowPos(nativeWindow, nullptr, position.left, position.top, 0,
+                        0,
+                        SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER |
+                            SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
 #endif /* WIN32 */
+}
+
+void Window::Impl::setFullscreen(bool fullscreen,
+                                 int /* monitor */,
+                                 bool lockMutex) noexcept {
+  if (lockMutex) {
+    mutex.lock();
+  }
+  this->fullscreen = fullscreen;
+  if (fullscreen) {
+    // Save state information to restore to
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    ::GetWindowPlacement(nativeWindow, &fullscreenPrePlacement);
+    fullscreenPreStyle = ::GetWindowLongPtrW(nativeWindow, GWL_STYLE);
+
+    auto style = fullscreenPreStyle & ~(WS_OVERLAPPEDWINDOW | WS_POPUP);
+    ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, style);
+
+    // TODO (WattsUp)
+    HMONITOR monitor = ::MonitorFromWindow(nativeWindow, MONITOR_DEFAULTTONULL);
+    if (monitor == nullptr) {
+      if (lockMutex) {
+        mutex.unlock();
+      }
+      return;
+    }
+    MONITORINFO monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    if (::GetMonitorInfoW(monitor, &monitorInfo) == 0) {
+      if (lockMutex) {
+        mutex.unlock();
+      }
+      return;
+    }
+
+    ::SetWindowPos(nativeWindow, HWND_TOP, monitorInfo.rcMonitor.left,
+                   monitorInfo.rcMonitor.top,
+                   monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+                   monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+                   SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
+                       SWP_ASYNCWINDOWPOS);
+#endif /* WIN32 */
+  } else {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, fullscreenPreStyle);
+    ::SetWindowPlacement(nativeWindow, &fullscreenPrePlacement);
+    ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
+                   SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
+                       SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
+
+#endif /* WIN32 */
+  }
+  if (lockMutex) {
+    mutex.unlock();
+  }
 }
 
 void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
@@ -107,6 +166,21 @@ void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
     mutex.lock();
   }
   this->resizable = resizable;
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  if (!borderless) {
+    auto style = ::GetWindowLongPtrW(nativeWindow, GWL_STYLE);
+    style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+    if (resizable) {
+      style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+    }
+    ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, style);
+    ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
+                   SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
+                       SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
+  }
+#endif /* WIN32 */
+
   if (lockMutex) {
     mutex.unlock();
   }
@@ -123,30 +197,27 @@ void Window::Impl::setResizingBorder(Edges border, bool lockMutex) noexcept {
 }
 
 void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
-  if (this->borderless == borderless) {
-    // No change
-    return;
-  }
   if (lockMutex) {
     mutex.lock();
   }
   this->borderless = borderless;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  Size innerSize = getSize(true);
-
+  // Borderless related source from https://github.com/melak47/BorderlessWindow
   WindowStyle style = WindowStyle::windowed;
   if (borderless) {
     style = compositionEnabled() ? WindowStyle::aeroBorderless
                                  : WindowStyle::basicBorderless;
   }
-  ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, static_cast<LONG>(style));
+  ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
 
   // Restore shadow or not
   setBorderlessShadow(borderlessShadow, false);
 
-  // Alert window manager frame has changed and preserve client area
-  setSize(innerSize, true);
+  // Alert window manager frame has changed
+  ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
+                     SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
 #endif /* WIN32 */
 
   setShowState(showState, false);
@@ -178,16 +249,6 @@ void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
   }
 #endif /* WIN32 */
 
-  if (lockMutex) {
-    mutex.unlock();
-  }
-}
-
-void Window::Impl::setDraggable(bool draggable, bool lockMutex) noexcept {
-  if (lockMutex) {
-    mutex.lock();
-  }
-  this->draggable = draggable;
   if (lockMutex) {
     mutex.unlock();
   }
@@ -276,6 +337,10 @@ bool Window::setPosition(Position position, int monitor) noexcept {
   return dynamic_cast<Window::Impl*>(pImpl)->setPosition(position, monitor);
 }
 
+void Window::setFullscreen(bool fullscreen, int monitor) noexcept {
+  dynamic_cast<Window::Impl*>(pImpl)->setFullscreen(fullscreen, monitor);
+}
+
 void Window::setTitle(const char* title) noexcept {
   dynamic_cast<Window::Impl*>(pImpl)->setTitle(title);
 }
@@ -294,10 +359,6 @@ void Window::setBorderless(bool borderless) noexcept {
 
 void Window::setBorderlessShadow(bool shadow) noexcept {
   dynamic_cast<Window::Impl*>(pImpl)->setBorderlessShadow(shadow);
-}
-
-void Window::setDraggable(bool draggable) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setDraggable(draggable);
 }
 
 void Window::setDraggingArea(int bottom) noexcept {

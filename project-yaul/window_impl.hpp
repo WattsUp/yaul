@@ -93,6 +93,18 @@ class Window::Impl final : public Object::Impl {
   bool setPosition(Position position, int monitor = 0) noexcept;
 
   /**
+   * @brief Set the window to be fullscreen or not
+   *
+   * @param fullscreen true will make the window fill the monitor, false will
+   * restore it to its previous state
+   * @param monitor to full screen into, default is the current one the window
+   * is on
+   */
+  void setFullscreen(bool fullscreen,
+                     int monitor    = 0,
+                     bool lockMutex = true) noexcept;
+
+  /**
    * @brief Set the title of the window.
    *
    * @param title
@@ -135,15 +147,6 @@ class Window::Impl final : public Object::Impl {
    * @param lockMutex true will lock the mutex during operation
    */
   void setBorderlessShadow(bool shadow, bool lockMutex = true) noexcept;
-
-  /**
-   * @brief Set the window draggable or not to change its position
-   *
-   * @param draggable true will allow dragging via dragging area, see
-   * setDraggingArea
-   * @param lockMutex true will lock the mutex during operation
-   */
-  void setDraggable(bool draggable, bool lockMutex = true) noexcept;
 
   /**
    * @brief Set the dragging area of the window for changing its position. A
@@ -244,6 +247,12 @@ class Window::Impl final : public Object::Impl {
 
   std::atomic<bool> closeFlag = false;
 
+  bool fullscreen = false;
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  LONG_PTR fullscreenPreStyle = 0;
+  WINDOWPLACEMENT fullscreenPrePlacement{};
+#endif /* WIN32 */
+
   // Lock data used by setting thread, windproc, and renderer before setting or
   // reading. That includes all member variables below
   std::mutex mutex;
@@ -254,7 +263,6 @@ class Window::Impl final : public Object::Impl {
   bool resizable        = true;
   bool borderless       = false;
   bool borderlessShadow = true;
-  bool draggable        = true;
 
   Edges resizingBorder {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
