@@ -28,7 +28,9 @@ class YAUL_API Window final : public Object {
    * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
-   * @return std::unique_ptr<Window> pointer to window object
+   * @return std::unique_ptr<Window> pointer to window object TODO (WattsUp)
+   * replace std::unique_ptr with header only to allow passing over DLL and
+   * avoid raw pointers
    *
    * @throws std::exception if failed to create window
    */
@@ -36,11 +38,8 @@ class YAUL_API Window final : public Object {
       Size size,
       const char* title,
       ShowState state = ShowState::restore) noexcept(false) {
-    Result r;
-    std::unique_ptr<Window> o(apiCreateWindow(size, title, state, r));
-    if (r.failed())
-      throw std::exception(r);
-    return o;
+    YAUL_EXCEPTION_WRAPPER_THROW(std::unique_ptr<Window>, apiCreateWindow, size,
+                                 title, state);
   }
 
   YAUL_DEFINE_DESTRUCT(Window);
@@ -95,7 +94,7 @@ class YAUL_API Window final : public Object {
    * border if present
    * @return Size in pixels
    */
-  Size getSize(bool innerSize = true) const noexcept;
+  [[nodiscard]] Size getSize(bool innerSize = true) const noexcept;
 
   /**
    * @brief Set the position of the window
@@ -199,7 +198,7 @@ class YAUL_API Window final : public Object {
   static Window* apiCreateWindow(Size size,
                                  const char* title,
                                  ShowState state,
-                                 Result& r) noexcept;
+                                 Result* r) noexcept;
 };
 
 }  // namespace yaul

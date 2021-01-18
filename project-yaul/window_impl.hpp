@@ -16,8 +16,8 @@
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
 
-#define YAUL_WM_NEW_WINDOW (WM_USER + 0)
-#define YAUL_WM_STOP_LOOP (WM_USER + 1)
+constexpr UINT YAUL_WM_NEW_WINDOW = (WM_USER + 0);
+constexpr UINT YAUL_WM_STOP_LOOP  = (WM_USER + 1);
 #endif /* WIN32 */
 
 namespace yaul {
@@ -202,7 +202,7 @@ class Window::Impl final : public Object::Impl {
    * @param window to adjust
    * @param rect to adjust
    */
-  static void adjustClientRect(HWND window, RECT& rect) noexcept;
+  static void adjustClientRect(HWND window, RECT* rect) noexcept;
 
   /**
    * @brief Perform a hit test between the cursor and the window looking for

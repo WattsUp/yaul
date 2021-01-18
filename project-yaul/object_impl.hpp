@@ -14,6 +14,10 @@ class Object::Impl {
   Impl() noexcept = default;
 
   virtual ~Impl() noexcept = default;
+  Impl(Impl&& o) noexcept  = default;
+  Impl& operator=(Impl&& o) noexcept = default;
+  Impl(const Impl& o) noexcept       = default;
+  Impl& operator=(const Impl& o) noexcept = default;
 
  private:
 };

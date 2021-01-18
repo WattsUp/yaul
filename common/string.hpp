@@ -13,6 +13,7 @@
 #endif
 
 #include <yaul/common.hpp>
+#include <yaul/pointers.hpp>
 
 namespace yaul {
 
@@ -32,27 +33,21 @@ class WideChar final {
    *
    * @param string to convert, UTF-8 encoded
    */
-  WideChar(string string) {
+  explicit WideChar(const string& string) noexcept {
     int len = MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0);
-    buffer  = new wchar_t[static_cast<size_t>(
-        len)];  // NOLINT (cppcoreguidelines-owning-memory)
-    MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer, len);
+    buffer.reset(static_cast<size_t>(len));
+    MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer.get(), len);
   }
-
-  ~WideChar() { delete[] buffer; }
-
-  YAUL_NO_COPY(WideChar);
-  YAUL_NO_MOVE(WideChar);
 
   /**
    * @brief Get the string as a null terminated wide char array
    *
    * @return wchar_t*
    */
-  wchar_t* c_str() const { return buffer; }
+  [[nodiscard]] wchar_t* c_str() const noexcept { return buffer.get(); }
 
  private:
-  wchar_t* buffer = nullptr;
+  ptr::ScopedArray<wchar_t> buffer;
 };
 
 }  // namespace yaul

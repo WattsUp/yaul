@@ -8,22 +8,16 @@ namespace yaul {
 
 Object::Object() noexcept : pImpl(new Object::Impl()) {}
 
-Object::~Object() noexcept {
-  delete pImpl;
-}
+Object::~Object() noexcept = default;
 
 Object::Object(Object&& o) noexcept {
-  pImpl   = o.pImpl;
-  o.pImpl = nullptr;
+  pImpl.swap(o.pImpl);
 }
 
 Object& Object::operator=(Object&& o) noexcept {
-  if (&o == this) {
-    return *this;
+  if (this != &o) {
+    pImpl.swap(o.pImpl);
   }
-  delete pImpl;
-  pImpl   = o.pImpl;
-  o.pImpl = nullptr;
   return *this;
 }
 
@@ -32,7 +26,7 @@ Object::Object(const Object& o) noexcept : pImpl(new Object::Impl(*o.pImpl)) {}
 Object& Object::operator=(const Object& o) noexcept {
   if (this != &o) {
     // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-    pImpl = new Object::Impl(*o.pImpl);
+    pImpl.reset(new Object::Impl(*o.pImpl));
   }
   return *this;
 }

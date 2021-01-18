@@ -29,10 +29,13 @@ class Application::Impl final : public Object::Impl {
    * @param argv command line arguments
    * @param settings of the application
    */
-  Impl(int argc, char* argv[], const ApplicationSettings& settings) noexcept;
+  Impl(int argc,
+       char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
+       const ApplicationSettings& settings) noexcept;
 
   YAUL_DEFINE_DESTRUCT(Impl);
   YAUL_NO_COPY(Impl);
+  YAUL_NO_MOVE(Impl);
 
   /**
    * @brief Add a window to the application

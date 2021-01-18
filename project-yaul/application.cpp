@@ -61,7 +61,7 @@ Window* Application::Impl::addWindow(
   }
 
   if (windowInfo.result.failed()) {
-    throw std::exception(windowInfo.result);
+    throw std::exception(static_cast<char*>(windowInfo.result));
   }
 
   // Lookup and apply any styling from XML/CSS
@@ -95,16 +95,14 @@ YAUL_IMPL_MOVE(Application, Object);
 Window* Application::apiAddWindow(const char* id,
                                   Size size,
                                   Window::ShowState showState,
-                                  Result& r) noexcept {
+                                  Result* const r) noexcept {
   YAUL_EXCEPTION_WRAPPER_CATCH(
-      return dynamic_cast<Application::Impl*>(pImpl)->addWindow(id, size,
-                                                                showState),
-             r);
+      return impl<Impl>()->addWindow(id, size, showState));
   return nullptr;
 }
 
 void Application::waitForAllWindowsToClose() noexcept {
-  dynamic_cast<Application::Impl*>(pImpl)->waitForAllWindowsToClose();
+  impl<Impl>()->waitForAllWindowsToClose();
 }
 
 }  // namespace yaul

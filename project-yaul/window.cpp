@@ -203,6 +203,8 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
   this->borderless = borderless;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  Size innerSize = getSize(true);
+
   // Borderless related source from https://github.com/melak47/BorderlessWindow
   WindowStyle style = WindowStyle::windowed;
   if (borderless) {
@@ -218,6 +220,9 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
   ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
                      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
+
+  // Preserve inner size when changing
+  setSize(innerSize, true);
 #endif /* WIN32 */
 
   setShowState(showState, false);
@@ -303,70 +308,70 @@ YAUL_IMPL_MOVE(Window, Object);
 Window* Window::apiCreateWindow(Size size,
                                 const char* title,
                                 ShowState state,
-                                Result& r) noexcept {
+                                Result* const r) noexcept {
   // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-  YAUL_EXCEPTION_WRAPPER_CATCH(return new Window(size, title, state), r);
+  YAUL_EXCEPTION_WRAPPER_CATCH(return new Window(size, title, state));
   return nullptr;
 }
 
 bool Window::shouldClose() noexcept {
-  return dynamic_cast<Window::Impl*>(pImpl)->shouldClose();
+  return impl<Impl>()->shouldClose();
 }
 
 void Window::render() noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->render();
+  impl<Impl>()->render();
 }
 
 void Window::pollEvents() noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->pollEvents();
+  impl<Impl>()->pollEvents();
 }
 
 void Window::closeRequest() noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->closeRequest();
+  impl<Impl>()->closeRequest();
 }
 
 bool Window::setSize(Size size, bool innerSize) noexcept {
-  return dynamic_cast<Window::Impl*>(pImpl)->setSize(size, innerSize);
+  return impl<Impl>()->setSize(size, innerSize);
 }
 
 Size Window::getSize(bool innerSize) const noexcept {
-  return dynamic_cast<Window::Impl*>(pImpl)->getSize(innerSize);
+  return impl<Impl>()->getSize(innerSize);
 }
 
 bool Window::setPosition(Position position, int monitor) noexcept {
-  return dynamic_cast<Window::Impl*>(pImpl)->setPosition(position, monitor);
+  return impl<Impl>()->setPosition(position, monitor);
 }
 
 void Window::setFullscreen(bool fullscreen, int monitor) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setFullscreen(fullscreen, monitor);
+  impl<Impl>()->setFullscreen(fullscreen, monitor);
 }
 
 void Window::setTitle(const char* title) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setTitle(title);
+  impl<Impl>()->setTitle(title);
 }
 
 void Window::setResizable(bool resizable) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setResizable(resizable);
+  impl<Impl>()->setResizable(resizable);
 }
 
 void Window::setResizingBorder(Edges border) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setResizingBorder(border);
+  impl<Impl>()->setResizingBorder(border);
 }
 
 void Window::setBorderless(bool borderless) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setBorderless(borderless);
+  impl<Impl>()->setBorderless(borderless);
 }
 
 void Window::setBorderlessShadow(bool shadow) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setBorderlessShadow(shadow);
+  impl<Impl>()->setBorderlessShadow(shadow);
 }
 
 void Window::setDraggingArea(int bottom) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setDraggingArea(bottom);
+  impl<Impl>()->setDraggingArea(bottom);
 }
 
 void Window::setShowState(ShowState state) noexcept {
-  dynamic_cast<Window::Impl*>(pImpl)->setShowState(state);
+  impl<Impl>()->setShowState(state);
 }
 
 }  // namespace yaul

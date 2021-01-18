@@ -9,14 +9,13 @@ namespace yaul {
 
 class Logger {
  private:
-  Logger() {}
+  Logger()                = default;
   logger_t loggerFunction = nullptr;
 
  public:
-  Logger(const Logger&) = delete;
-  Logger& operator=(const Logger&) = delete;
-  Logger(Logger**)                 = delete;
-  Logger& operator=(Logger&&) = delete;
+  ~Logger() = default;
+  YAUL_NO_COPY(Logger);
+  YAUL_NO_MOVE(Logger);
 
   /**
    * @brief Get the singleton logger instance
@@ -35,8 +34,8 @@ class Logger {
    * @param msg to log
    */
   inline void log(LogLevel level, const string& msg) {
-    if (instance().loggerFunction != nullptr) {
-      instance().loggerFunction(level, msg.c_str());
+    if (loggerFunction != nullptr) {
+      loggerFunction(level, msg.c_str());
     }
   }
 
@@ -45,7 +44,7 @@ class Logger {
    *
    * @param logger to direct messages to
    */
-  inline void setLogger(logger_t logger) { instance().loggerFunction = logger; }
+  inline void setLogger(logger_t logger) { loggerFunction = logger; }
 };
 
 }  // namespace yaul

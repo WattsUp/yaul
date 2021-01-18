@@ -8,7 +8,7 @@ HINSTANCE Window::Impl::hInstance = nullptr;
 
 const LPCWSTR windowClassName = L"yaul";
 
-void Window::Impl::adjustClientRect(HWND window, RECT& rect) noexcept {
+void Window::Impl::adjustClientRect(HWND window, RECT* const rect) noexcept {
   WINDOWPLACEMENT placement;
   if (::GetWindowPlacement(window, &placement) == 0 ||
       placement.showCmd != SW_MAXIMIZE) {
@@ -27,7 +27,7 @@ void Window::Impl::adjustClientRect(HWND window, RECT& rect) noexcept {
   }
 
   // Client area fills the monitor working area (no taskbar)
-  rect = monitorInfo.rcWork;
+  *rect = monitorInfo.rcWork;
 }
 
 LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
@@ -62,6 +62,8 @@ LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
     // clang-format on
   }
 
+  // TODO (WattsUp) sysmenu
+
   if (cursor.y < (window.top + draggingAreaBottom)) {
     return HTCAPTION;
   }
@@ -87,7 +89,7 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
       if (wParam == TRUE && window->borderless) {
         // When computing client area for borderless, draw over title bar
         // A normal frame adjusts the client area to exclude the title bar
-        adjustClientRect(hWindow, params.rgrc[0]);
+        adjustClientRect(hWindow, &params.rgrc[0]);
         return 0;
       }
     } break;

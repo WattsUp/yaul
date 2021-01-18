@@ -69,6 +69,7 @@ int main(int argc, char* argv[]) {
   }
   window->setTitle(u8"🌍Hello World🌍");
   window->setFullscreen(true);
+  // delete window; corruption
 
   app.waitForAllWindowsToClose();
 

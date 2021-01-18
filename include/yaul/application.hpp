@@ -30,7 +30,7 @@ class YAUL_API Application final : public Object {
    * @param settings of the application
    */
   Application(int argc,
-              char* argv[],
+              char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
               const ApplicationSettings& settings) noexcept;
 
   YAUL_DEFINE_DESTRUCT(Application);
@@ -70,7 +70,7 @@ class YAUL_API Application final : public Object {
   Window* apiAddWindow(const char* id,
                        Size size,
                        Window::ShowState showState,
-                       Result& r) noexcept;
+                       Result* r) noexcept;
 };
 
 }  // namespace yaul

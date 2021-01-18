@@ -11,7 +11,7 @@ Checks: '-*,
         performance-*,
         portability-*,
         readability-*'
-HeaderFilterRegex: '^[a-z]'
+HeaderFilterRegex: '.*'
 FormatStyle: 'file'
 CheckOptions:
   - key:    readability-braces-around-statements.ShortStatementLines
