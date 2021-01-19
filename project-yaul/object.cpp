@@ -6,31 +6,29 @@ namespace yaul {
 
 /******************************** Public Class ********************************/
 
-Object::Object() noexcept : pImpl(new Object::Impl()) {}
+Object::Object() noexcept : pImpl(ptr::Unique<Impl>::make()) {}
 
 Object::~Object() noexcept = default;
 
-Object::Object(Object&& o) noexcept {
-  pImpl.swap(o.pImpl);
-}
+Object::Object(Object&& o) noexcept : pImpl(std::move(o.pImpl)) {}
 
 Object& Object::operator=(Object&& o) noexcept {
   if (this != &o) {
-    pImpl.swap(o.pImpl);
+    pImpl = std::move(o.pImpl);
   }
   return *this;
 }
 
-Object::Object(const Object& o) noexcept : pImpl(new Object::Impl(*o.pImpl)) {}
+Object::Object(const Object& o) noexcept
+    : pImpl(ptr::Unique<Impl>::make(*o.pImpl)) {}
 
 Object& Object::operator=(const Object& o) noexcept {
   if (this != &o) {
-    // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-    pImpl.reset(new Object::Impl(*o.pImpl));
+    pImpl = ptr::Unique<Impl>::make(*o.pImpl);
   }
   return *this;
 }
 
-Object::Object(Object::Impl& p) noexcept : pImpl(&p) {}
+Object::Object(ptr::Unique<Impl> p) noexcept : pImpl(std::move(p)) {}
 
 }  // namespace yaul

@@ -300,7 +300,7 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
 /******************************** Public Class ********************************/
 
 Window::Window(Size size, const char* title, ShowState state) noexcept(false)
-    : Object(*new Window::Impl(size, title, state)) {}
+    : Object(ptr::Unique<Impl>::make(size, title, state)) {}
 
 YAUL_IMPL_DESTRUCT(Window);
 YAUL_IMPL_MOVE(Window, Object);

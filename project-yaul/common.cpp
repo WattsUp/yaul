@@ -25,7 +25,8 @@ Result::Result() noexcept = default;
  */
 Result::Result(const char* message) noexcept {
   size_t len = strlen(message) + 1;
-  msg.reset(len);
+  // NOLINTNEXTLINE (modernize-avoid-c-arrays)
+  msg         = ptr::Unique<char[]>::make(len);
   errno_t err = strcpy_s(msg.get(), len, message);
   if (err != 0) {
     Logger::instance().log(LogLevel::error,
@@ -35,16 +36,12 @@ Result::Result(const char* message) noexcept {
 
 Result::~Result() noexcept = default;
 
-Result::Result(Result&& o) noexcept {
-  msg.swap(o.msg);
-}
+Result::Result(Result&& o) noexcept : msg(std::move(o.msg)) {}
 
 Result& Result::operator=(Result&& o) noexcept {
-  if (&o == this) {
-    return *this;
+  if (&o != this) {
+    msg = std::move(o.msg);
   }
-
-  msg.swap(o.msg);
   return *this;
 }
 

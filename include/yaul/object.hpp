@@ -21,14 +21,22 @@ class YAUL_API Object {
  protected:
   YAUL_DEFINE_INHERIT(Object);
 
+  /**
+   * @brief Access the implementation object as a derived object
+   *
+   * @tparam T derived Impl typename
+   * @return T* pointer to implementation (dynamically casted to derived object)
+   */
   template <typename T>
   [[nodiscard]] inline T* impl() const noexcept {
     return dynamic_cast<T*>(pImpl.get());
   }
 
  private:
-  ptr::Scoped<Impl> pImpl;
+  ptr::Unique<Impl> pImpl;
 };
+
+class YAUL_API SharedObject {};
 
 }  // namespace yaul
 

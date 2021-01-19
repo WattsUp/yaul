@@ -52,8 +52,10 @@ typedef unsigned __int32 uint32_t;
   x(const x& o) noexcept;   \
   x& operator=(const x& o) noexcept; /* NOLINT (bugprone-macro-parentheses) */
 
+#include <yaul/pointers.hpp>
+
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
-#define YAUL_DEFINE_INHERIT(x) explicit x(Impl& p) noexcept;
+#define YAUL_DEFINE_INHERIT(x) explicit x(ptr::Unique<Impl> p) noexcept;
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define YAUL_DEFINE_DESTRUCT_MOVE_COPY(x) \
@@ -169,7 +171,7 @@ class YAUL_API Result {
   inline explicit operator char*() const noexcept { return msg.get(); }
 
  private:
-  ptr::ScopedArray<char> msg;
+  ptr::Unique<char[]> msg;  // NOLINT (modernize-avoid-c-arrays)
 };
 
 /**

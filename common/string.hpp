@@ -33,9 +33,10 @@ class WideChar final {
    *
    * @param string to convert, UTF-8 encoded
    */
-  explicit WideChar(const string& string) noexcept {
-    int len = MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0);
-    buffer.reset(static_cast<size_t>(len));
+  explicit WideChar(const string& string) noexcept
+      : len(MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0)),
+        // NOLINTNEXTLINE (modernize-avoid-c-arrays)
+        buffer(ptr::Scoped<wchar_t[]>::make(static_cast<size_t>(len))) {
     MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer.get(), len);
   }
 
@@ -47,7 +48,8 @@ class WideChar final {
   [[nodiscard]] wchar_t* c_str() const noexcept { return buffer.get(); }
 
  private:
-  ptr::ScopedArray<wchar_t> buffer;
+  int len = 0;
+  ptr::Scoped<wchar_t[]> buffer;  // NOLINT (modernize-avoid-c-arrays)
 };
 
 }  // namespace yaul

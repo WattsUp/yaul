@@ -87,7 +87,7 @@ Application::Application(
     int argc,
     char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
     const ApplicationSettings& settings) noexcept
-    : Object(*new Application::Impl(argc, argv, settings)) {}
+    : Object(ptr::Unique<Impl>::make(argc, argv, settings)) {}
 
 YAUL_IMPL_DESTRUCT(Application);
 YAUL_IMPL_MOVE(Application, Object);
