@@ -29,9 +29,7 @@ class Application::Impl final : public Object::Impl {
    * @param argv command line arguments
    * @param settings of the application
    */
-  Impl(int argc,
-       char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
-       const ApplicationSettings& settings) noexcept;
+  Impl(int argc, char** argv, const ApplicationSettings& settings) noexcept;
 
   YAUL_DEFINE_DESTRUCT(Impl);
   YAUL_NO_COPY(Impl);
@@ -50,7 +48,7 @@ class Application::Impl final : public Object::Impl {
    *
    * @throw std::exception on failure
    */
-  Window* addWindow(
+  Window addWindow(
       const char* id,
       Size size                   = defaultWindowSize,
       Window::ShowState showState = Window::ShowState::restore) noexcept(false);
@@ -78,7 +76,7 @@ class Application::Impl final : public Object::Impl {
   struct NewWindowInfo {
     Size size;
     string id;
-    Window* createdWindow = nullptr;
+    Window createdWindow;
     Result result;
     bool complete = false;
   };
@@ -88,7 +86,7 @@ class Application::Impl final : public Object::Impl {
 
   NewWindowInfo* newWindowInfo = nullptr;
 
-  std::unordered_map<string, std::unique_ptr<Window>> windows{};
+  std::unordered_map<string, Window> windows{};
 
   bool doRender                       = true;
   std::atomic<bool> running           = false;

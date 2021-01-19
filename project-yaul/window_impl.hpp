@@ -22,7 +22,7 @@ constexpr UINT YAUL_WM_STOP_LOOP  = (WM_USER + 1);
 
 namespace yaul {
 
-class Window::Impl final : public Object::Impl {
+class Window::Impl final : public SharedObject::Impl {
  public:
   /**
    * @brief Construct a new Window implementation object with default values

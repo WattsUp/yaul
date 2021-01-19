@@ -26,7 +26,7 @@ Result::Result() noexcept = default;
 Result::Result(const char* message) noexcept {
   size_t len = strlen(message) + 1;
   // NOLINTNEXTLINE (modernize-avoid-c-arrays)
-  msg         = ptr::Unique<char[]>::make(len);
+  msg         = std::make_unique<char[]>(len);
   errno_t err = strcpy_s(msg.get(), len, message);
   if (err != 0) {
     Logger::instance().log(LogLevel::error,

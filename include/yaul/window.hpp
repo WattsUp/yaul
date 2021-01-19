@@ -4,11 +4,14 @@
 #include <yaul/dimensions.hpp>
 #include <yaul/object.hpp>
 
-#include <memory>
-
 namespace yaul {
 
-class YAUL_API Window final : public Object {
+// Forward declaration for friend status
+// namespace Application::Impl{
+class Application;
+// }
+
+class YAUL_API Window final : public SharedObject {
  public:
   /**
    * @enum Window show state
@@ -28,23 +31,14 @@ class YAUL_API Window final : public Object {
    * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
-   * @return std::unique_ptr<Window> pointer to window object TODO (WattsUp)
-   * replace std::unique_ptr with header only to allow passing over DLL and
-   * avoid raw pointers
    *
    * @throws std::exception if failed to create window
    */
-  static std::unique_ptr<Window> createWindow(
-      Size size,
-      const char* title,
-      ShowState state = ShowState::restore) noexcept(false) {
-    YAUL_EXCEPTION_WRAPPER_THROW(std::unique_ptr<Window>, apiCreateWindow, size,
-                                 title, state);
+  Window(Size size, const char* title, ShowState state) noexcept(false) {
+    YAUL_EXCEPTION_WRAPPER_THROW_VOID(apiCreateWindow, size, title, state);
   }
 
-  YAUL_DEFINE_DESTRUCT(Window);
-  YAUL_NO_COPY(Window);
-  YAUL_DEFINE_MOVE(Window);
+  YAUL_DEFINE_DESTRUCT_MOVE_COPY(Window);
 
   class Impl;
 
@@ -173,32 +167,28 @@ class YAUL_API Window final : public Object {
    */
   void setShowState(ShowState state) noexcept;
 
+  friend class Application;  // For Window()
+
  private:
   /**
-   * @brief Construct a new Window with given parameters
+   * @brief Construct an empty window object. SharedObject points to nullptr
    *
-   * @param size in pixels (inner size, see setSize)
-   * @param title to display on titlebar
-   * @param state true will show the window, false will not, use setShowState to
-   *
-   * @throws std::exception if failed to create window
    */
-  Window(Size size, const char* title, ShowState state) noexcept(false);
+  Window() noexcept;
 
   /**
-   * @brief Construct a new Window with given parameters
+   * @brief Construct a new Window with given parameters. If successful, the
+   * pImpl points to the new window
    *
    * @param size in pixels (inner size, see setSize)
    * @param title to display on titlebar
    * @param state true will show the window, false will not, use setShowState to
    * @param r result object returned
-   * @return Window* pointer to window object or nullptr if failed (see result),
-   * take ownership
    */
-  static Window* apiCreateWindow(Size size,
-                                 const char* title,
-                                 ShowState state,
-                                 Result* r) noexcept;
+  void apiCreateWindow(Size size,
+                       const char* title,
+                       ShowState state,
+                       Result* r) noexcept;
 };
 
 }  // namespace yaul

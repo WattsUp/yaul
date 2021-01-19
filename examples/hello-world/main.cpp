@@ -60,18 +60,28 @@ int main(int argc, char* argv[]) {
   settings.logger = logger;
   auto app        = yaul::Application(argc, argv, settings);
 
-  yaul::Window* window = nullptr;
   try {
-    window = app.addWindow(u8"unique window id");
+    auto window = app.addWindow(u8"unique window id");
+    window.setTitle(u8"🌍Hello World🌍");
+    window.setFullscreen(true);
+    // delete window; corruption
+
+    logger(yaul::LogLevel::debug, "Window should not delete now");
+    app.waitForAllWindowsToClose();
+    logger(yaul::LogLevel::debug, "Window should not delete now");
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    window.setShowState(yaul::Window::ShowState::restore);
+    window.setTitle("Closed window that app doesn't know about");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    window.setTitle("but still processes windowproc, not render");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    logger(yaul::LogLevel::debug, "Window should delete now");
   } catch (const ::std::exception& e) {
     logger(yaul::LogLevel::critical, e.what());
     return -1;
   }
-  window->setTitle(u8"🌍Hello World🌍");
-  window->setFullscreen(true);
-  // delete window; corruption
-
-  app.waitForAllWindowsToClose();
+  logger(yaul::LogLevel::debug, "Did window get deleted?");
 
   // yaul::String dialog = window.addString("dialog", "");
 

@@ -6,10 +6,9 @@
 
 namespace yaul {
 
-Application::Impl::Impl(
-    int argc,
-    char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
-    const ApplicationSettings& settings) noexcept {
+Application::Impl::Impl(int argc,
+                        char** argv,
+                        const ApplicationSettings& settings) noexcept {
   Logger::instance().setLogger(settings.logger);
 
   for (int i = 0; i < argc; ++i) {
@@ -28,7 +27,7 @@ Application::Impl::~Impl() noexcept {
   stop();
 }
 
-Window* Application::Impl::addWindow(
+Window Application::Impl::addWindow(
     const char* id,
     Size size,
     Window::ShowState showState) noexcept(false) {
@@ -42,7 +41,7 @@ Window* Application::Impl::addWindow(
     std::unique_lock<std::mutex> lock(mutex);
     auto search = windows.find(windowInfo.id);
     if (search != windows.end()) {
-      return search->second.get();
+      return search->second;
     }
 
     newWindowInfo = &windowInfo;
@@ -65,10 +64,10 @@ Window* Application::Impl::addWindow(
   }
 
   // Lookup and apply any styling from XML/CSS
-  windowInfo.createdWindow->setTitle(id);         // TODO (WattsUp) get title
-  windowInfo.createdWindow->setBorderless(true);  // Yaul draws custom a menubar
+  windowInfo.createdWindow.setTitle(id);         // TODO (WattsUp) get title
+  windowInfo.createdWindow.setBorderless(true);  // Yaul draws custom a menubar
 
-  windowInfo.createdWindow->setShowState(showState);
+  windowInfo.createdWindow.setShowState(showState);
 
   return windowInfo.createdWindow;
 }
@@ -83,22 +82,21 @@ void Application::Impl::waitForAllWindowsToClose() noexcept {
 
 /******************************** Public Class ********************************/
 
-Application::Application(
-    int argc,
-    char* argv[],  // NOLINT (cppcoreguidelines-avoid-c-arrays)
-    const ApplicationSettings& settings) noexcept
-    : Object(ptr::Unique<Impl>::make(argc, argv, settings)) {}
+Application::Application(int argc,
+                         char** argv,
+                         const ApplicationSettings& settings) noexcept
+    : Object(std::make_unique<Impl>(argc, argv, settings)) {}
 
 YAUL_IMPL_DESTRUCT(Application);
 YAUL_IMPL_MOVE(Application, Object);
 
-Window* Application::apiAddWindow(const char* id,
-                                  Size size,
-                                  Window::ShowState showState,
-                                  Result* const r) noexcept {
+Window Application::apiAddWindow(const char* id,
+                                 Size size,
+                                 Window::ShowState showState,
+                                 Result* const r) noexcept {
   YAUL_EXCEPTION_WRAPPER_CATCH(
       return impl<Impl>()->addWindow(id, size, showState));
-  return nullptr;
+  return Window();
 }
 
 void Application::waitForAllWindowsToClose() noexcept {

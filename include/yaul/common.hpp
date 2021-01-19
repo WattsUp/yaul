@@ -52,10 +52,14 @@ typedef unsigned __int32 uint32_t;
   x(const x& o) noexcept;   \
   x& operator=(const x& o) noexcept; /* NOLINT (bugprone-macro-parentheses) */
 
-#include <yaul/pointers.hpp>
+#include <memory>
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
-#define YAUL_DEFINE_INHERIT(x) explicit x(ptr::Unique<Impl> p) noexcept;
+#define YAUL_DEFINE_INHERIT(x) explicit x(std::unique_ptr<Impl> p) noexcept;
+
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_DEFINE_INHERIT_SHARED(x) \
+  explicit x(std::shared_ptr<Impl> p) noexcept;
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define YAUL_DEFINE_DESTRUCT_MOVE_COPY(x) \
@@ -75,13 +79,19 @@ typedef unsigned __int32 uint32_t;
   }
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
-#define YAUL_IMPL_COPY(x, base)                                \
-  x::x(const x& o) noexcept                                    \
-      : base(*new x::Impl(*static_cast<x::Impl*>(o.pImpl))) {} \
-  x##& x::operator=(const x& o) noexcept {                     \
-    base::operator=(o);                                        \
-    return *this;                                              \
+#define YAUL_IMPL_COPY(x, base)                                    \
+  x::x(const x& o) noexcept : base(*new x::Impl(*impl<Impl>())) {} \
+  x& x::operator= /* NOLINT (bugprone-macro-parentheses) */        \
+      (const x& o) noexcept {                                      \
+    base::operator=(o);                                            \
+    return *this;                                                  \
   }
+
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_IMPL_COPY_SHARED(x)                            \
+  x::x(const x& o) noexcept = default;                      \
+  x& x::operator=(/* NOLINT (bugprone-macro-parentheses) */ \
+                  const x& o) noexcept = default;
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define YAUL_IMPL_INHERIT(x) \
@@ -125,15 +135,14 @@ enum class LogLevel : uint8_t {
  * @param level of the log statement
  * @param msg to log
  */
-typedef void (*logger_t)(LogLevel level, const char* msg) noexcept;
+using logger_t = void (*)(LogLevel, const char*) noexcept;
 
 }  // namespace yaul
 
 /******************************* Error Handling *******************************/
 #include <exception>
+#include <memory>
 #include <stdexcept>
-
-#include <yaul/pointers.hpp>
 
 namespace yaul {
 
@@ -171,7 +180,7 @@ class YAUL_API Result {
   inline explicit operator char*() const noexcept { return msg.get(); }
 
  private:
-  ptr::Unique<char[]> msg;  // NOLINT (modernize-avoid-c-arrays)
+  std::unique_ptr<char[]> msg;  // NOLINT (modernize-avoid-c-arrays)
 };
 
 /**

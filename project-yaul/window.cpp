@@ -8,6 +8,7 @@ Window::Impl::Impl(Size size,
                    const char* title,
                    ShowState state) noexcept(false)
     : title(title), showState(state) {
+  Logger::instance().log(LogLevel::debug, "Window::Impl construction");
   if (size.width == 0 || size.height == 0) {
     throw std::invalid_argument("Both dimensions of size must be non-zero");
   }
@@ -22,6 +23,7 @@ Window::Impl::Impl(Size size,
 }
 
 Window::Impl::~Impl() noexcept {
+  Logger::instance().log(LogLevel::debug, title + "Window::Impl destruction");
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   ::RemovePropW(nativeWindow, L"yaul");
   ::DestroyWindow(nativeWindow);
@@ -299,19 +301,21 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
 
 /******************************** Public Class ********************************/
 
-Window::Window(Size size, const char* title, ShowState state) noexcept(false)
-    : Object(ptr::Unique<Impl>::make(size, title, state)) {}
+Window::Window() noexcept : SharedObject(std::shared_ptr<Impl>(nullptr)) {}
 
 YAUL_IMPL_DESTRUCT(Window);
-YAUL_IMPL_MOVE(Window, Object);
+YAUL_IMPL_MOVE(Window, SharedObject);
+YAUL_IMPL_COPY_SHARED(Window);
 
-Window* Window::apiCreateWindow(Size size,
-                                const char* title,
-                                ShowState state,
-                                Result* const r) noexcept {
-  // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
-  YAUL_EXCEPTION_WRAPPER_CATCH(return new Window(size, title, state));
-  return nullptr;
+void Window::apiCreateWindow(Size size,
+                             const char* title,
+                             ShowState state,
+                             Result* const r) noexcept {
+  try {
+    SharedObject::setImpl(std::make_shared<Window::Impl>(size, title, state));
+  } catch (const std::exception& e) {
+    *(r) = Result(e.what());
+  }
 }
 
 bool Window::shouldClose() noexcept {

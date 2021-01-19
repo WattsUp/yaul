@@ -12,8 +12,8 @@
 #pragma warning(pop)
 #endif
 
+#include <memory>
 #include <yaul/common.hpp>
-#include <yaul/pointers.hpp>
 
 namespace yaul {
 
@@ -36,7 +36,7 @@ class WideChar final {
   explicit WideChar(const string& string) noexcept
       : len(MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0)),
         // NOLINTNEXTLINE (modernize-avoid-c-arrays)
-        buffer(ptr::Scoped<wchar_t[]>::make(static_cast<size_t>(len))) {
+        buffer(std::make_unique<wchar_t[]>(static_cast<size_t>(len))) {
     MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer.get(), len);
   }
 
@@ -49,7 +49,7 @@ class WideChar final {
 
  private:
   int len = 0;
-  ptr::Scoped<wchar_t[]> buffer;  // NOLINT (modernize-avoid-c-arrays)
+  std::unique_ptr<wchar_t[]> buffer;  // NOLINT (modernize-avoid-c-arrays)
 };
 
 }  // namespace yaul

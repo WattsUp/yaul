@@ -35,9 +35,8 @@ void Application::Impl::loop() noexcept {
         }
 
         try {
-          std::unique_ptr<Window> window(Window::createWindow(
-              newWindowInfo->size, "", Window::ShowState::hidden));
-          newWindowInfo->createdWindow = window.get();
+          Window window(newWindowInfo->size, "", Window::ShowState::hidden);
+          newWindowInfo->createdWindow = window;
           windows.emplace(newWindowInfo->id, std::move(window));
         } catch (const std::exception& e) {
           newWindowInfo->result = Result(e.what());
@@ -60,11 +59,11 @@ void Application::Impl::loop() noexcept {
       auto itr = windows.begin();
       auto end = windows.end();
       while (itr != end) {
-        const auto& window = itr->second;
-        if (window->shouldClose()) {
+        auto& window = itr->second;
+        if (window.shouldClose()) {
           {
             std::lock_guard<std::mutex> lock(mutex);
-            window->setShowState(Window::ShowState::hidden);
+            window.setShowState(Window::ShowState::hidden);
             itr = windows.erase(itr);
           }
           cv.notify_one();
