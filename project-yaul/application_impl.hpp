@@ -1,5 +1,5 @@
-#ifndef _YAUL_APPLICATION_IMPL_HPP_
-#define _YAUL_APPLICATION_IMPL_HPP_
+#ifndef YAUL_APPLICATION_IMPL_HPP
+#define YAUL_APPLICATION_IMPL_HPP
 
 #include <yaul/application.hpp>
 

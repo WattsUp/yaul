@@ -5,6 +5,7 @@
 set (SRCS_API
   "application.cpp"
   "common.cpp"
+  "monitor.cpp"
   "object.cpp"
   "window.cpp"
 )

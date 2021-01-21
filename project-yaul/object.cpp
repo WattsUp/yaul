@@ -13,9 +13,8 @@ Object::~Object() noexcept = default;
 Object::Object(Object&& o) noexcept : pImpl(std::move(o.pImpl)) {}
 
 Object& Object::operator=(Object&& o) noexcept {
-  if (this != &o) {
+  if (this != &o)
     pImpl = std::move(o.pImpl);
-  }
   return *this;
 }
 
@@ -23,10 +22,13 @@ Object::Object(const Object& o) noexcept
     : pImpl(std::make_unique<Impl>(*o.pImpl)) {}
 
 Object& Object::operator=(const Object& o) noexcept {
-  if (this != &o) {
+  if (this != &o)
     pImpl = std::make_unique<Impl>(*o.pImpl);
-  }
   return *this;
+}
+
+void Object::setImpl(std::unique_ptr<Impl> p) noexcept {
+  pImpl = std::move(p);
 }
 
 Object::Object(std::unique_ptr<Impl> p) noexcept : pImpl(std::move(p)) {}
@@ -39,9 +41,8 @@ SharedObject::SharedObject(SharedObject&& o) noexcept
     : pImpl(std::move(o.pImpl)) {}
 
 SharedObject& SharedObject::operator=(SharedObject&& o) noexcept {
-  if (this != &o) {
+  if (this != &o)
     pImpl = std::move(o.pImpl);
-  }
   return *this;
 }
 

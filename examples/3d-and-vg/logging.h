@@ -1,5 +1,5 @@
-#ifndef _YAUL_EXAMPLE_LOGGING_HPP_
-#define _YAUL_EXAMPLE_LOGGING_HPP_
+#ifndef YAUL_EXAMPLE_LOGGING_HPP
+#define YAUL_EXAMPLE_LOGGING_HPP
 
 #include <spdlog/spdlog.h>
 #include <yaul/yaul.hpp>

@@ -67,8 +67,8 @@ def main():
     traceback.print_exc()
     sys.exit(1)
 
-  data = f"""#ifndef _COMMON_VERSION_H_
-#define _COMMON_VERSION_H_
+  data = f"""#ifndef COMMON_VERSION_H
+#define COMMON_VERSION_H
 
 #ifndef VERSION_DEFINES
 const constexpr char* VERSION_STRING_FULL = "{version.fullStr()}";

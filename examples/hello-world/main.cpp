@@ -3,6 +3,7 @@
 #include <fstream>
 #include <thread>
 
+// NOLINTNEXTLINE (cppcoreguidelines-avoid-non-const-global-variables)
 std::ofstream logFile;
 
 /**
@@ -13,9 +14,8 @@ std::ofstream logFile;
  */
 void logger(yaul::LogLevel level, const char* msg) noexcept {
   try {
-    if (!logFile.is_open()) {
+    if (!logFile.is_open())
       return;
-    }
     switch (level) {
       case yaul::LogLevel::debug:
         logFile << "[ DEBUG  ] ";
@@ -60,28 +60,26 @@ int main(int argc, char* argv[]) {
   settings.logger = logger;
   auto app        = yaul::Application(argc, argv, settings);
 
+  auto monitors = yaul::Monitor::enumerate();
+  for (const auto& monitor : monitors)
+    logger(yaul::LogLevel::debug, monitor.getName());
+
   try {
     auto window = app.addWindow(u8"unique window id");
     window.setTitle(u8"🌍Hello World🌍");
+    window.setPosition({128, 256}, &monitors.back());
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     window.setFullscreen(true);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // window.setFullscreen(true);
+    window.setFullscreen(true, &monitors.front());
     // delete window; corruption
 
-    logger(yaul::LogLevel::debug, "Window should not delete now");
-    app.waitForAllWindowsToClose();
-    logger(yaul::LogLevel::debug, "Window should not delete now");
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    window.setShowState(yaul::Window::ShowState::restore);
-    window.setTitle("Closed window that app doesn't know about");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    window.setTitle("but still processes windowproc, not render");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    logger(yaul::LogLevel::debug, "Window should delete now");
   } catch (const ::std::exception& e) {
     logger(yaul::LogLevel::critical, e.what());
     return -1;
   }
-  logger(yaul::LogLevel::debug, "Did window get deleted?");
+  app.waitForAllWindowsToClose();
 
   // yaul::String dialog = window.addString("dialog", "");
 

@@ -18,6 +18,7 @@ import sys
 import tempfile
 import threading
 import traceback
+import yaml
 
 ## Get a list of all files (caring for gitignore) that match the regex pattern
 #  @param git executable
@@ -153,7 +154,7 @@ def runTidy(clangTidy, queue, lock, failedCommands,
   while True:
     name = queue.get()
 
-    cmd = [clangTidy, "-p", compilationDatabase, "-quiet"]
+    cmd = [clangTidy, "-p", compilationDatabase, "--quiet"]
     if tmpdir:
       cmd.append("-export-fixes")
       # Get a temporary file. We immediately close the handle so clang-tidy can
@@ -168,13 +169,15 @@ def runTidy(clangTidy, queue, lock, failedCommands,
         print(" ". join(cmd))
     try:
       proc = subprocess.Popen(
-          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception:
       queue.task_done()
       failedCommands.append(" ".join(cmd))
       continue
 
     output, err = proc.communicate()
+    output = output.decode("utf-8")
+    err = err.decode("utf-8")
     if proc.returncode != 0:
       failedCommands.append(" ".join(cmd))
     with lock:

@@ -1,7 +1,8 @@
-#ifndef _YAUL_WINDOW_HPP_
-#define _YAUL_WINDOW_HPP_
+#ifndef YAUL_WINDOW_HPP
+#define YAUL_WINDOW_HPP
 
 #include <yaul/dimensions.hpp>
+#include <yaul/monitor.hpp>
 #include <yaul/object.hpp>
 
 namespace yaul {
@@ -98,7 +99,8 @@ class YAUL_API Window final : public SharedObject {
    * @param monitor to position relative to
    * @return true if position was successfully adjusted, false otherwise
    */
-  bool setPosition(Position position, int monitor = 0) noexcept;
+  bool setPosition(Position position,
+                   const Monitor* monitor = nullptr) noexcept;
 
   /**
    * @brief Set the window to be fullscreen or not
@@ -108,7 +110,8 @@ class YAUL_API Window final : public SharedObject {
    * @param monitor to full screen into, default is the current one the window
    * is on
    */
-  void setFullscreen(bool fullscreen, int monitor = 0) noexcept;
+  void setFullscreen(bool fullscreen,
+                     const Monitor* monitor = nullptr) noexcept;
 
   /**
    * @brief Set the title of the window.

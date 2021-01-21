@@ -4,27 +4,24 @@
 
 namespace yaul {
 
-HINSTANCE Window::Impl::hInstance = nullptr;
+const HINSTANCE Window::Impl::hInstance = Window::Impl::registerClass();
 
 const LPCWSTR windowClassName = L"yaul";
 
 void Window::Impl::adjustClientRect(HWND window, RECT* const rect) noexcept {
   WINDOWPLACEMENT placement;
   if (::GetWindowPlacement(window, &placement) == 0 ||
-      placement.showCmd != SW_MAXIMIZE) {
+      placement.showCmd != SW_MAXIMIZE)
     return;
-  }
 
   HMONITOR monitor = ::MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
-  if (monitor == nullptr) {
+  if (monitor == nullptr)
     return;
-  }
 
   MONITORINFO monitorInfo{};
   monitorInfo.cbSize = sizeof(monitorInfo);
-  if (::GetMonitorInfoW(monitor, &monitorInfo) == 0) {
+  if (::GetMonitorInfoW(monitor, &monitorInfo) == 0)
     return;
-  }
 
   // Client area fills the monitor working area (no taskbar)
   *rect = monitorInfo.rcWork;
@@ -32,9 +29,8 @@ void Window::Impl::adjustClientRect(HWND window, RECT* const rect) noexcept {
 
 LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
   RECT window;
-  if (::GetWindowRect(nativeWindow, &window) == 0) {
+  if (::GetWindowRect(nativeWindow, &window) == 0)
     return HTNOWHERE;
-  }
 
   if (resizable) {
     enum EdgeMask : uint8_t {
@@ -64,9 +60,8 @@ LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
 
   // TODO (WattsUp) sysmenu
 
-  if (cursor.y < (window.top + draggingAreaBottom)) {
+  if (cursor.y < (window.top + draggingAreaBottom))
     return HTCAPTION;
-  }
 
   return HTCLIENT;
 }
@@ -76,9 +71,8 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
                                                WPARAM wParam,
                                                LPARAM lParam) {
   auto* window = static_cast<Window::Impl*>(::GetPropW(hWindow, L"yaul"));
-  if (window == nullptr) {
+  if (window == nullptr)
     return ::DefWindowProcW(hWindow, msg, wParam, lParam);
-  }
 
   switch (msg) {
     case WM_NCCALCSIZE: {
@@ -99,6 +93,7 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
         return window->hitTest(
             POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
       }
+
     } break;
     case WM_NCACTIVATE: {
       std::lock_guard<std::mutex> lock(window->mutex);
@@ -129,14 +124,14 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
       Size size = window->getSize(false);
       string text =
           std::to_string(size.width) + "x" + std::to_string(size.height);
-      TextOutA(hdc, 0, 15, text.c_str(), static_cast<int>(text.size()));
+      TextOutA(hdc, 0, 16, text.c_str(), static_cast<int>(text.size()));
       size = window->getSize(true);
       text = std::to_string(size.width) + "x" + std::to_string(size.height);
-      TextOutA(hdc, 0, 30, text.c_str(), static_cast<int>(text.size()));
+      TextOutA(hdc, 0, 32, text.c_str(), static_cast<int>(text.size()));
       RECT rect;
       ::GetWindowRect(hWindow, &rect);
       text = std::to_string(rect.left) + " " + std::to_string(rect.top);
-      TextOutA(hdc, 0, 45, text.c_str(), static_cast<int>(text.size()));
+      TextOutA(hdc, 0, 64, text.c_str(), static_cast<int>(text.size()));
       EndPaint(hWindow, &ps);
       return 0;
     }
@@ -144,25 +139,22 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
     case WM_SYSKEYDOWN: {
       switch (wParam) {
         case VK_F8: {
-          window->setFullscreen(!window->fullscreen, 0, false);
+          window->setFullscreen(!window->fullscreen, nullptr, false);
           return 0;
         }
         case VK_F9: {
-          if (!window->fullscreen) {
+          if (!window->fullscreen)
             window->setResizable(!window->resizable, false);
-          }
           return 0;
         }
         case VK_F10: {
-          if (!window->fullscreen) {
+          if (!window->fullscreen)
             window->setBorderless(!window->borderless, false);
-          }
           return 0;
         }
         case VK_F11: {
-          if (!window->fullscreen) {
+          if (!window->fullscreen)
             window->setBorderlessShadow(!window->borderlessShadow, false);
-          }
           return 0;
         }
       }
@@ -173,34 +165,37 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
   return ::DefWindowProcW(hWindow, msg, wParam, lParam);
 }
 
+HINSTANCE Window::Impl::registerClass() noexcept {
+  HINSTANCE hInstance = ::GetModuleHandleW(nullptr);
+
+  WNDCLASSEXW wc;
+  ::ZeroMemory(&wc, sizeof(WNDCLASSEXW));
+
+  wc.cbSize        = sizeof(wc);
+  wc.lpszClassName = windowClassName;
+  wc.lpfnWndProc   = windowProcedure;
+  wc.hInstance     = hInstance;
+  wc.style         = CS_HREDRAW | CS_VREDRAW;
+  // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+  wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+  // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+  wc.hCursor = ::LoadCursorW(nullptr, reinterpret_cast<LPCWSTR>(IDC_ARROW));
+  if (::RegisterClassExW(&wc) == 0)
+    return nullptr;
+
+  return hInstance;
+}
+
 void Window::Impl::createNativeWindow() noexcept(false) {
-  if (hInstance == nullptr) {
-    hInstance = ::GetModuleHandleW(nullptr);
-
-    WNDCLASSEXW wc;
-    ::ZeroMemory(&wc, sizeof(WNDCLASSEXW));
-
-    wc.cbSize        = sizeof(wc);
-    wc.lpszClassName = windowClassName;
-    wc.lpfnWndProc   = windowProcedure;
-    wc.hInstance     = hInstance;
-    wc.style         = CS_HREDRAW | CS_VREDRAW;
-    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
-    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
-    wc.hCursor = ::LoadCursorW(nullptr, reinterpret_cast<LPCWSTR>(IDC_ARROW));
-    if (::RegisterClassExW(&wc) == 0) {
-      throw std::exception("Failed to register class");
-    }
-  }
+  if (hInstance == nullptr)
+    throw std::exception("Failed to register class");
 
   nativeWindow = ::CreateWindowExW(
       0, windowClassName, windowClassName,
       static_cast<DWORD>(WindowStyle::windowed), CW_USEDEFAULT, CW_USEDEFAULT,
       CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
-  if (nativeWindow == nullptr) {
+  if (nativeWindow == nullptr)
     throw std::exception("Failed to create window");
-  }
 
   ::SetPropW(nativeWindow, L"yaul", this);
 }

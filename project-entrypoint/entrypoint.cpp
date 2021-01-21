@@ -27,32 +27,30 @@ extern "C" int APIENTRY WinMain(HINSTANCE /* hInstance */,
                                 int /* nShowCmd */) {
   // Get command line arguments as classic argc, argv
   int argc        = 0;
-  wchar_t** argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
-  if (argvW == nullptr) {
+  wchar_t** argvW = ::CommandLineToArgvW(::GetCommandLineW(), &argc);
+  if (argvW == nullptr)
     return -1;
-  }
 
   // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
   char** argv = new char*[static_cast<size_t>(argc + 1)];
   for (int i = 0; i != argc; ++i) {
-    int len = WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, nullptr, 0, nullptr,
-                                  nullptr);
+    int len = ::WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, nullptr, 0,
+                                    nullptr, nullptr);
     // NOLINTNEXTLINE (cppcoreguidelines-owning-memory)
     argv[i] = new char[static_cast<size_t>(len)];
-    WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, argv[i], len, nullptr,
-                        nullptr);
+    ::WideCharToMultiByte(CP_UTF8, 0, argvW[i], -1, argv[i], len, nullptr,
+                          nullptr);
   }
   argv[argc] = nullptr;
-  LocalFree(argvW);
+  ::LocalFree(argvW);
 
   // Call user implemented main
   const int exitCode = main(argc, argv);
 
   // Clean up argv memory
-  for (int i = 0; i < argc; ++i) {
+  for (int i = 0; i < argc; ++i)
     delete[] argv[i];  // NOLINT (cppcoreguidelines-owning-memory)
-  }
-  delete[] argv;  // NOLINT (cppcoreguidelines-owning-memory)
+  delete[] argv;       // NOLINT (cppcoreguidelines-owning-memory)
 
   return exitCode;
 }

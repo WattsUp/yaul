@@ -39,9 +39,8 @@ Result::~Result() noexcept = default;
 Result::Result(Result&& o) noexcept : msg(std::move(o.msg)) {}
 
 Result& Result::operator=(Result&& o) noexcept {
-  if (&o != this) {
+  if (&o != this)
     msg = std::move(o.msg);
-  }
   return *this;
 }
 

@@ -1,5 +1,5 @@
-#ifndef _YAUL_WINDOW_IMPL_HPP_
-#define _YAUL_WINDOW_IMPL_HPP_
+#ifndef YAUL_WINDOW_IMPL_HPP
+#define YAUL_WINDOW_IMPL_HPP
 
 #include <yaul/window.hpp>
 
@@ -90,7 +90,8 @@ class Window::Impl final : public SharedObject::Impl {
    * @param monitor to position relative to
    * @return true if position was successfully adjusted, false otherwise
    */
-  bool setPosition(Position position, int monitor = 0) noexcept;
+  bool setPosition(Position position,
+                   const Monitor* monitor = nullptr) noexcept;
 
   /**
    * @brief Set the window to be fullscreen or not
@@ -101,8 +102,8 @@ class Window::Impl final : public SharedObject::Impl {
    * is on
    */
   void setFullscreen(bool fullscreen,
-                     int monitor    = 0,
-                     bool lockMutex = true) noexcept;
+                     const Monitor* monitor = nullptr,
+                     bool lockMutex         = true) noexcept;
 
   /**
    * @brief Set the title of the window.
@@ -218,8 +219,10 @@ class Window::Impl final : public SharedObject::Impl {
    */
   LRESULT hitTest(POINT cursor) const noexcept;
 
-  typedef HWND NativeWindow;
-  static HINSTANCE hInstance;
+  using NativeWindow = HWND;
+
+  static HINSTANCE registerClass() noexcept;
+  static const HINSTANCE hInstance;
 
   /**
    * @enum Windows window styles

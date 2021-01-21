@@ -1,5 +1,5 @@
-#ifndef _YAUL_COMMON_HPP_
-#define _YAUL_COMMON_HPP_
+#ifndef YAUL_COMMON_HPP
+#define YAUL_COMMON_HPP
 
 #ifdef _MSC_VER
 #if YAUL_CREATE_SHARED_LIBRARY
@@ -79,12 +79,12 @@ typedef unsigned __int32 uint32_t;
   }
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
-#define YAUL_IMPL_COPY(x, base)                                    \
-  x::x(const x& o) noexcept : base(*new x::Impl(*impl<Impl>())) {} \
-  x& x::operator= /* NOLINT (bugprone-macro-parentheses) */        \
-      (const x& o) noexcept {                                      \
-    base::operator=(o);                                            \
-    return *this;                                                  \
+#define YAUL_IMPL_COPY(x, base)                                                \
+  x::x(const x& o) noexcept : base(std::make_unique<Impl>(*o.impl<Impl>())) {} \
+  x& x::operator= /* NOLINT (bugprone-macro-parentheses) */                    \
+      (const x& o) noexcept {                                                  \
+    base::operator=(o);                                                        \
+    return *this;                                                              \
   }
 
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)

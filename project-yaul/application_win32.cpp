@@ -80,13 +80,11 @@ void Application::Impl::stop() noexcept {
 
   // Send a message to refresh GetMessage
   if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
-                           YAUL_WM_STOP_LOOP, 0, 0) == 0) {
+                           YAUL_WM_STOP_LOOP, 0, 0) == 0)
     ::PostQuitMessage(-1);
-  }
 
-  if (thread->joinable()) {
+  if (thread->joinable())
     thread->join();
-  }
 }
 
 }  // namespace yaul

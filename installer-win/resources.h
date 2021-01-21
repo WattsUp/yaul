@@ -1,5 +1,5 @@
-#ifndef _INSTALLER_RESOURCES_H_
-#define _INSTALLER_RESOURCES_H_
+#ifndef INSTALLER_RESOURCES_H
+#define INSTALLER_RESOURCES_H
 
 #define RES_ARCHIVE 1  // NOLINT (cppcoreguidelines-macro-usage)
 

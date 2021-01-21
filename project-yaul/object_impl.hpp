@@ -1,5 +1,5 @@
-#ifndef _YAUL_OBJECT_IMPL_HPP_
-#define _YAUL_OBJECT_IMPL_HPP_
+#ifndef YAUL_OBJECT_IMPL_HPP
+#define YAUL_OBJECT_IMPL_HPP
 
 #include <yaul/object.hpp>
 

@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 #if DEBUG
     spdlog::info(VERSION_STRING_FULL);
     spdlog::set_level(spdlog::level::debug);
-#else  /* DEBUG */
+#else /* DEBUG */
     spdlog::info(VERSION_STRING);
 #endif /* DEBUG */
 
@@ -91,9 +91,9 @@ int main(int argc, char* argv[]) {
       spdlog::info("Argument: {}", argv[i]);
     }
 
-    if (!extractArchive("temp")) {
+    if (!extractArchive("temp"))
       spdlog::error("Error occurred whilst extracting archive");
-    }
+
   } catch (std::exception& e) {
     // Catch exceptions from spdlog
     puts(e.what());

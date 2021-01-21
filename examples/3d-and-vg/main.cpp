@@ -45,9 +45,8 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  while (!window->shouldClose()) {
+  while (!window->shouldClose())
     window->render();
-  }
   app.waitForAllWindowsToClose();
 
   // float rotation = 0.0F;

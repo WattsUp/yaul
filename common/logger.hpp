@@ -1,5 +1,5 @@
-#ifndef _YAUL_LOGGER_HPP_
-#define _YAUL_LOGGER_HPP_
+#ifndef YAUL_LOGGER_HPP
+#define YAUL_LOGGER_HPP
 
 #include <yaul/common.hpp>
 

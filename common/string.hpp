@@ -1,5 +1,5 @@
-#ifndef _YAUL_STRING_HPP_
-#define _YAUL_STRING_HPP_
+#ifndef YAUL_STRING_HPP
+#define YAUL_STRING_HPP
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -34,10 +34,10 @@ class WideChar final {
    * @param string to convert, UTF-8 encoded
    */
   explicit WideChar(const string& string) noexcept
-      : len(MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0)),
+      : len(::MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0)),
         // NOLINTNEXTLINE (modernize-avoid-c-arrays)
         buffer(std::make_unique<wchar_t[]>(static_cast<size_t>(len))) {
-    MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer.get(), len);
+    ::MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, buffer.get(), len);
   }
 
   /**
@@ -46,6 +46,23 @@ class WideChar final {
    * @return wchar_t*
    */
   [[nodiscard]] wchar_t* c_str() const noexcept { return buffer.get(); }
+
+  /**
+   * @brief Convert a wide char string to a UTF8 string
+   *
+   * @param wString to convert
+   * @return string UTF-8 encoded
+   */
+  static inline string rev(const wchar_t* wString) noexcept {
+    int len = WideCharToMultiByte(CP_UTF8, 0, wString, -1, nullptr, 0, nullptr,
+                                  nullptr);
+    std::unique_ptr<char[]> buffer(  // NOLINT (modernize-avoid-c-arrays)
+        std::make_unique<char[]>(    // NOLINT (modernize-avoid-c-arrays)
+            static_cast<size_t>(len)));
+    WideCharToMultiByte(CP_UTF8, 0, wString, -1, buffer.get(), len, nullptr,
+                        nullptr);
+    return string(buffer.get());
+  }
 
  private:
   int len = 0;

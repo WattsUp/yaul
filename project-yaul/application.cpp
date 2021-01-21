@@ -11,9 +11,9 @@ Application::Impl::Impl(int argc,
                         const ApplicationSettings& settings) noexcept {
   Logger::instance().setLogger(settings.logger);
 
-  for (int i = 0; i < argc; ++i) {
+  for (int i = 0; i < argc; ++i)
     Logger::instance().log(LogLevel::debug, argv[i]);
-  }
+
   doRender = !settings.customRenderLoop;
   running  = true;
   thread   = std::make_unique<std::thread>(&Application::Impl::loop, this);
@@ -40,18 +40,17 @@ Window Application::Impl::addWindow(
     // Check for window already created
     std::unique_lock<std::mutex> lock(mutex);
     auto search = windows.find(windowInfo.id);
-    if (search != windows.end()) {
+    if (search != windows.end())
       return search->second;
-    }
 
     newWindowInfo = &windowInfo;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     // Send new window message
     if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
-                             YAUL_WM_NEW_WINDOW, 0, 0) == 0) {
+                             YAUL_WM_NEW_WINDOW, 0, 0) == 0)
       throw std::exception("Failed to post new window message");
-    }
+
 #endif /* WIN32 */
 
     // Wait for loop to create window
@@ -59,9 +58,8 @@ Window Application::Impl::addWindow(
     cv.wait(lock, [&windowInfo] { return windowInfo.complete; });
   }
 
-  if (windowInfo.result.failed()) {
+  if (windowInfo.result.failed())
     throw std::exception(static_cast<char*>(windowInfo.result));
-  }
 
   // Lookup and apply any styling from XML/CSS
   windowInfo.createdWindow.setTitle(id);         // TODO (WattsUp) get title
@@ -73,9 +71,9 @@ Window Application::Impl::addWindow(
 }
 
 void Application::Impl::waitForAllWindowsToClose() noexcept {
-  if (windows.empty() || !running) {
+  if (windows.empty() || !running)
     return;
-  }
+
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, [this]() { return windows.empty(); });
 }

@@ -1,5 +1,5 @@
-#ifndef _YAUL_APPLICATION_HPP_
-#define _YAUL_APPLICATION_HPP_
+#ifndef YAUL_APPLICATION_HPP
+#define YAUL_APPLICATION_HPP
 
 #include <yaul/object.hpp>
 #include <yaul/window.hpp>

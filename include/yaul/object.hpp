@@ -1,5 +1,5 @@
-#ifndef _YAUL_OBJECT_HPP_
-#define _YAUL_OBJECT_HPP_
+#ifndef YAUL_OBJECT_HPP
+#define YAUL_OBJECT_HPP
 
 #include <memory>
 #include <yaul/common.hpp>
@@ -20,6 +20,13 @@ class YAUL_API Object {
 
  protected:
   YAUL_DEFINE_INHERIT(Object);
+
+  /**
+   * @brief Set the implementation object to a new one
+   *
+   * @param p new implementation to set
+   */
+  void setImpl(std::unique_ptr<Impl> p) noexcept;
 
   /**
    * @brief Access the implementation object as a derived object

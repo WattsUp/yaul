@@ -1,5 +1,5 @@
-#ifndef _YAUL_VG_DIMENSIONS_HPP_
-#define _YAUL_VG_DIMENSIONS_HPP_
+#ifndef YAUL_VG_DIMENSIONS_HPP
+#define YAUL_VG_DIMENSIONS_HPP
 
 namespace yaul {
 
@@ -19,6 +19,12 @@ struct Size {
 struct Position {
   int top  = 0;
   int left = 0;
+
+  Position& operator+=(const Position& rhs) noexcept {
+    top += rhs.top;
+    left += rhs.left;
+    return *this;
+  }
 };
 
 /**

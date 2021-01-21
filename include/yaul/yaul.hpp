@@ -1,8 +1,9 @@
-#ifndef _YAUL_HPP_
-#define _YAUL_HPP_
+#ifndef YAUL_HPP
+#define YAUL_HPP
 
 #include <yaul/application.hpp>
 #include <yaul/common.hpp>
+#include <yaul/monitor.hpp>
 #include <yaul/window.hpp>
 
 // #include <yaul/vg/vg.hpp>
