@@ -35,6 +35,7 @@ On Windows I recommend using [vcpkg](https://github.com/Microsoft/vcpkg)
 * [spdlog](https://github.com/gabime/spdlog) logging library
 * [Google Test](https://github.com/google/googletest) framework
 * [Tiny-utf8](https://github.com/DuffsDevice/tiny-utf8) unicode support >4.3
+* [TinyXML-2](https://github.com/leethomason/tinyxml2) XML parsing
 
 ### Manually Building ###
 Configure the project with default compiler and compile

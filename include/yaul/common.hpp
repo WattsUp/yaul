@@ -29,6 +29,23 @@ typedef unsigned __int32 uint32_t;
 #include <cstdint>
 #endif
 
+#ifdef __has_feature
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_HAS_FEATURE(x) __has_feature(x)
+#else
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_HAS_FEATURE(x) 0
+#endif
+
+#if (YAUL_HAS_FEATURE(cxx_relaxed_constexpr) || __GNUC__ >= 9 || \
+     _MSC_VER >= 1910)
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_CONSTEXPR constexpr
+#else
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define YAUL_CONSTEXPR inline
+#endif
+
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define YAUL_NO_COPY(x) \
   x(const x&) = delete; \
@@ -211,7 +228,7 @@ class YAUL_API Result {
   Result r;                                                        \
   returnType o{apiFunction(__VA_ARGS__, &r)};                      \
   if (r.failed())                                                  \
-    throw std::exception(static_cast<char*>(r));                   \
+    throw std::runtime_error(static_cast<char*>(r));               \
   return o;
 
 /**
@@ -227,7 +244,7 @@ class YAUL_API Result {
   Result r;                                                 \
   apiFunction(__VA_ARGS__, &r);                             \
   if (r.failed())                                           \
-    throw std::exception(static_cast<char*>(r));
+    throw std::runtime_error(static_cast<char*>(r));
 
 }  // namespace yaul
 
@@ -242,7 +259,7 @@ class YAUL_API Result {
  * @param c hex character to decode (0123456789abcdefABCDEF)
  * @return constexpr uint8_t value represented by the hex character
  */
-constexpr uint8_t decodeHexChar(const char c) noexcept(false) {
+YAUL_CONSTEXPR uint8_t decodeHexChar(const char c) noexcept(false) {
   if (c >= '0' && c <= '9') {
     return static_cast<uint8_t>(c - '0');
   }

@@ -250,14 +250,14 @@ HINSTANCE Window::Impl::registerClass() noexcept {
 
 void Window::Impl::createNativeWindow() noexcept(false) {
   if (hInstance == nullptr)
-    throw std::exception("Failed to register class");
+    throw std::runtime_error("Failed to register class");
 
   nativeWindow = ::CreateWindowExW(
       0, windowClassName, windowClassName,
       static_cast<DWORD>(WindowStyle::windowed), CW_USEDEFAULT, CW_USEDEFAULT,
       CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
   if (nativeWindow == nullptr)
-    throw std::exception("Failed to create window");
+    throw std::runtime_error("Failed to create window");
 
   ::SetPropW(nativeWindow, L"yaul", this);
 }

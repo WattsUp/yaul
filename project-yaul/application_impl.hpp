@@ -8,6 +8,7 @@
 #include "window_impl.hpp"
 
 #include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -88,10 +89,10 @@ class Application::Impl final : public Object::Impl {
 
   std::unordered_map<string, Window> windows{};
 
-  bool doRender                       = true;
-  std::atomic<bool> running           = false;
-  std::atomic<bool> threadReady       = false;
-  std::unique_ptr<std::thread> thread = nullptr;
+  bool doRender = true;
+  std::atomic<bool> running{false};
+  std::atomic<bool> threadReady{false};
+  std::unique_ptr<std::thread> thread{nullptr};
 };
 
 }  // namespace yaul

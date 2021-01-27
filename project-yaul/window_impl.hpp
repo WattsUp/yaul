@@ -20,6 +20,10 @@ constexpr UINT YAUL_WM_NEW_WINDOW = (WM_USER + 0);
 constexpr UINT YAUL_WM_STOP_LOOP  = (WM_USER + 1);
 #endif /* WIN32 */
 
+#if defined(__linux) || defined(__linux__)
+#include <X11/Xlib.h>
+#endif /* __linux__ */
+
 namespace yaul {
 
 class Window::Impl final : public SharedObject::Impl {
@@ -260,10 +264,15 @@ class Window::Impl final : public SharedObject::Impl {
         MF_BYCOMMAND | (enabled ? MF_ENABLED : MF_DISABLED | MF_GRAYED));
   }
 
-  using NativeWindow = HWND;
-
+  /**
+   * @brief Register class with win32 to setup window procedure callback
+   *
+   * @return HINSTANCE registered class
+   */
   static HINSTANCE registerClass() noexcept;
   static const HINSTANCE hInstance;
+
+  HWND nativeWindow = nullptr;
 
   /**
    * @enum Windows window styles
@@ -284,10 +293,12 @@ class Window::Impl final : public SharedObject::Impl {
     aeroBorderless  = base | WS_CAPTION | WS_POPUP,
     basicBorderless = base | WS_POPUP
   };
-
 #endif /* WIN32 */
 
-  NativeWindow nativeWindow = nullptr;
+#if defined(__linux) || defined(__linux__)
+  using NativeWindow        = ::Window;
+  NativeWindow nativeWindow = 0;
+#endif /* __linux__ */
 
   std::atomic<bool> closeFlag = false;
 

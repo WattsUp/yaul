@@ -49,7 +49,7 @@ Window Application::Impl::addWindow(
     // Send new window message
     if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
                              YAUL_WM_NEW_WINDOW, 0, 0) == 0)
-      throw std::exception("Failed to post new window message");
+      throw std::runtime_error("Failed to post new window message");
 
 #endif /* WIN32 */
 
@@ -59,7 +59,7 @@ Window Application::Impl::addWindow(
   }
 
   if (windowInfo.result.failed())
-    throw std::exception(static_cast<char*>(windowInfo.result));
+    throw std::runtime_error(static_cast<char*>(windowInfo.result));
 
   // Lookup and apply any styling from XML/CSS
   windowInfo.createdWindow.setTitle(id);         // TODO (WattsUp) get title

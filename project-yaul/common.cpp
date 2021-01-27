@@ -26,12 +26,16 @@ Result::Result() noexcept = default;
 Result::Result(const char* message) noexcept {
   size_t len = strlen(message) + 1;
   // NOLINTNEXTLINE (modernize-avoid-c-arrays)
-  msg         = std::make_unique<char[]>(len);
+  msg = std::make_unique<char[]>(len);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   errno_t err = strcpy_s(msg.get(), len, message);
   if (err != 0) {
     Logger::instance().log(LogLevel::error,
                            u8"Unknown result, failed to copy message");
   }
+#else /* !WIN32 */
+  strncpy(msg.get(), message, len);
+#endif /* !WIN32 */
 }
 
 Result::~Result() noexcept = default;
