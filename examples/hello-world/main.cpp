@@ -68,11 +68,11 @@ int main(int argc, char* argv[]) {
     auto window = app.addWindow(u8"unique window id");
     window.setTitle(u8"🌍Hello World🌍");
     window.setPosition({128, 256}, &monitors.back());
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    window.setFullscreen(true);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
     // window.setFullscreen(true);
-    window.setFullscreen(true, &monitors.front());
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+    // // window.setFullscreen(true);
+    // window.setFullscreen(true, &monitors.front());
     // delete window; corruption
 
   } catch (const ::std::exception& e) {

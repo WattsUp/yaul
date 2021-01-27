@@ -61,9 +61,9 @@ Monitor::Impl::Impl(wchar_t* deviceName,
   size.height = static_cast<int>(deviceMode.dmPelsHeight);
 
   // NOLINTNEXTLINE (cppcoreguidelines-pro-type-union-access)
-  position.left = deviceMode.dmPosition.x;
+  position.x = deviceMode.dmPosition.x;
   // NOLINTNEXTLINE (cppcoreguidelines-pro-type-union-access)
-  position.top = deviceMode.dmPosition.y;
+  position.y = deviceMode.dmPosition.y;
 
   dpi = deviceMode.dmLogPixels;
 }

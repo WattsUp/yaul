@@ -86,8 +86,7 @@ bool Window::Impl::setPosition(Position position,
   if (monitor != nullptr)
     position += monitor->getPosition();
 
-  return ::SetWindowPos(nativeWindow, nullptr, position.left, position.top, 0,
-                        0,
+  return ::SetWindowPos(nativeWindow, nullptr, position.x, position.y, 0, 0,
                         SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER |
                             SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
 #endif /* WIN32 */
@@ -96,8 +95,10 @@ bool Window::Impl::setPosition(Position position,
 void Window::Impl::setFullscreen(bool fullscreen,
                                  const Monitor* monitor,
                                  bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setFullscreen(fullscreen, monitor, false);
+  }
 
   bool overwriteSave = (!this->fullscreen) && fullscreen;
 
@@ -120,29 +121,25 @@ void Window::Impl::setFullscreen(bool fullscreen,
       // Fullscreen current monitor
       HMONITOR monitor =
           ::MonitorFromWindow(nativeWindow, MONITOR_DEFAULTTONULL);
-      if (monitor == nullptr) {
-        if (lockMutex)
-          mutex.unlock();
+      if (monitor == nullptr)
         return;
-      }
+
       MONITORINFO monitorInfo{};
       monitorInfo.cbSize = sizeof(monitorInfo);
-      if (::GetMonitorInfoW(monitor, &monitorInfo) == 0) {
-        if (lockMutex)
-          mutex.unlock();
+      if (::GetMonitorInfoW(monitor, &monitorInfo) == 0)
         return;
-      }
-      size.width    = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-      size.height   = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
-      position.left = monitorInfo.rcMonitor.left;
-      position.top  = monitorInfo.rcMonitor.top;
+
+      size.width  = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+      size.height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+      position.x  = monitorInfo.rcMonitor.left;
+      position.y  = monitorInfo.rcMonitor.top;
     } else {
       size     = monitor->getSize();
       position = monitor->getPosition();
     }
 
-    ::SetWindowPos(nativeWindow, HWND_TOP, position.left, position.top,
-                   size.width, size.height,
+    ::SetWindowPos(nativeWindow, HWND_TOP, position.x, position.y, size.width,
+                   size.height,
                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
                        SWP_ASYNCWINDOWPOS);
 #endif /* WIN32 */
@@ -156,8 +153,6 @@ void Window::Impl::setFullscreen(bool fullscreen,
 
 #endif /* WIN32 */
   }
-  if (lockMutex)
-    mutex.unlock();
 }
 
 void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
@@ -165,18 +160,22 @@ void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
     mutex.lock();
 
   this->title = string(title);
+
   if (lockMutex)
     mutex.unlock();
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   WideChar wTitle(title);
-  ::SetWindowTextW(nativeWindow, wTitle.c_str());
-#endif /* WIN32 */
+  ::SetWindowTextW(nativeWindow,
+                   wTitle.c_str());  // Not asynchronous, unlock mutex before
+#endif                               /* WIN32 */
 }
 
 void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setResizable(resizable, false);
+  }
 
   this->resizable = resizable;
 
@@ -193,23 +192,22 @@ void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
   }
 #endif /* WIN32 */
-
-  if (lockMutex)
-    mutex.unlock();
 }
 
 void Window::Impl::setResizingBorder(Edges border, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setResizingBorder(border, false);
+  }
 
   resizingBorder = border;
-  if (lockMutex)
-    mutex.unlock();
 }
 
 void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setBorderless(borderless, false);
+  }
 
   this->borderless = borderless;
 
@@ -237,13 +235,13 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
 #endif /* WIN32 */
 
   setShowState(showState, false);
-  if (lockMutex)
-    mutex.unlock();
 }
 
 void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setBorderlessShadow(shadow, false);
+  }
 
   this->borderlessShadow = shadow;
 
@@ -263,23 +261,44 @@ void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
     }
   }
 #endif /* WIN32 */
-
-  if (lockMutex)
-    mutex.unlock();
 }
 
-void Window::Impl::setDraggingArea(int bottom, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+void Window::Impl::setDraggingArea(int bottom,
+                                   int menuWidth,
+                                   bool lockMutex) noexcept {
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setDraggingArea(bottom, menuWidth, false);
+  }
 
   this->draggingAreaBottom = bottom;
-  if (lockMutex)
-    mutex.unlock();
+  this->menuWidth          = menuWidth;
+}
+
+void Window::Impl::clearDraggingAreaMasks(bool lockMutex) noexcept {
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return clearDraggingAreaMasks(false);
+  }
+
+  draggingAreaMasks.clear();
+}
+
+void Window::Impl::addDraggingAreaMask(Rectangle rect,
+                                       bool lockMutex) noexcept {
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return addDraggingAreaMask(rect, false);
+  }
+
+  draggingAreaMasks.emplace_back(rect);
 }
 
 void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
-  if (lockMutex)
-    mutex.lock();
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return setShowState(state, false);
+  }
 
   showState = state;
 
@@ -299,9 +318,6 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
       break;
   }
 #endif /* WIN32 */
-
-  if (lockMutex)
-    mutex.unlock();
 }
 
 /******************************** Public Class ********************************/
@@ -375,8 +391,16 @@ void Window::setBorderlessShadow(bool shadow) noexcept {
   impl<Impl>()->setBorderlessShadow(shadow);
 }
 
-void Window::setDraggingArea(int bottom) noexcept {
-  impl<Impl>()->setDraggingArea(bottom);
+void Window::setDraggingArea(int bottom, int menuWidth) noexcept {
+  impl<Impl>()->setDraggingArea(bottom, menuWidth);
+}
+
+void Window::clearDraggingAreaMasks() noexcept {
+  impl<Impl>()->clearDraggingAreaMasks();
+}
+
+void Window::addDraggingAreaMask(Rectangle rect) noexcept {
+  impl<Impl>()->addDraggingAreaMask(rect);
 }
 
 void Window::setShowState(ShowState state) noexcept {

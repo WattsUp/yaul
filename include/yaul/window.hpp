@@ -154,14 +154,28 @@ class YAUL_API Window final : public SharedObject {
 
   /**
    * @brief Set the dragging area of the window for changing its position. A
-   * bordered window default to the title bar. Area defined by rectangle filling
-   * the top area with a bottom edge defined by distance from top. Dragging is
-   * lower than other interactions (buttons, resizing) such that those regions
-   * mask this draggable area.
+   * bordered window default to the title bar. Area defined by rectangle with
+   * corners (0, 0) and (window width - menuWidth, bottom). To further mask this
+   * area (such as buttons), see addDraggingAreaMask()
    *
    * @param bottom in pixels distance from top of window to bottom of area.
+   * @param menuWidth in pixels width of menu (minimize, maximize, close)
    */
-  void setDraggingArea(int bottom) noexcept;
+  void setDraggingArea(int bottom, int menuWidth) noexcept;
+
+  /**
+   * @brief Clear the list of dragging area masks added by addDraggingAreaMask
+   *
+   */
+  void clearDraggingAreaMasks() noexcept;
+
+  /**
+   * @brief Add a mask to the dragging area defined by setDraggingArea. To clear
+   * the list of masks, see clearDraggingAreaMasks
+   *
+   * @param rect to mask, coordinates are relative to top left (0, 0)
+   */
+  void addDraggingAreaMask(Rectangle rect) noexcept;
 
   /**
    * @brief Set the show state of the window, see ShowState

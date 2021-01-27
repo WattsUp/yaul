@@ -151,15 +151,33 @@ class Window::Impl final : public SharedObject::Impl {
 
   /**
    * @brief Set the dragging area of the window for changing its position. A
-   * bordered window default to the title bar. Area defined by rectangle filling
-   * the top with a bottom edge defined by distance from top. Dragging is
-   * lower than other interactions (buttons, resizing) such that those regions
-   * mask this draggable area.
+   * bordered window default to the title bar. Area defined by rectangle with
+   * corners (0, 0) and (window width - menuWidth, bottom). To further mask this
+   * area (such as buttons), see addDraggingAreaMask()
    *
    * @param bottom in pixels distance from top of window to bottom of area.
+   * @param menuWidth in pixels width of menu (minimize, maximize, close)
    * @param lockMutex true will lock the mutex during operation
    */
-  void setDraggingArea(int bottom, bool lockMutex = true) noexcept;
+  void setDraggingArea(int bottom,
+                       int menuWidth,
+                       bool lockMutex = true) noexcept;
+
+  /**
+   * @brief Clear the list of dragging area masks added by addDraggingAreaMask
+   *
+   * @param lockMutex true will lock the mutex during operation
+   */
+  void clearDraggingAreaMasks(bool lockMutex = true) noexcept;
+
+  /**
+   * @brief Add a mask to the dragging area defined by setDraggingArea. To clear
+   * the list of masks, see clearDraggingAreaMasks
+   *
+   * @param rect to mask, coordinates are relative to top left (0, 0)
+   * @param lockMutex true will lock the mutex during operation
+   */
+  void addDraggingAreaMask(Rectangle rect, bool lockMutex = true) noexcept;
 
   /**
    * @brief Set the show state of the window, see ShowState
@@ -216,8 +234,31 @@ class Window::Impl final : public SharedObject::Impl {
    * - HTCLIENT  client area
    * - HTTOP, HTTOPRIGHT, HTRIGHT, HTBOTTOMRIGHT, HTBOTTOM, HTBOTTOMLEFT,
    * HTLEFT, HTTOPLEFT resizing area
+   * @param lockMutex true will lock the mutex during operation
    */
-  LRESULT hitTest(POINT cursor) const noexcept;
+  LRESULT hitTest(Position cursor, bool lockMutex = true) noexcept;
+
+  /**
+   * @brief Display the system menu and send selected command
+   *
+   * @param position to place menu at
+   */
+  void showSysMenu(Position position) const noexcept;
+
+  /**
+   * @brief Enable/disable a menu item by command ID
+   *
+   * @param menu to modify
+   * @param command to modify
+   * @param enabled true will enable, false will disable and grey out
+   */
+  static inline void enableMenuItem(HMENU menu,
+                                    UINT command,
+                                    bool enabled) noexcept {
+    ::EnableMenuItem(
+        menu, command,
+        MF_BYCOMMAND | (enabled ? MF_ENABLED : MF_DISABLED | MF_GRAYED));
+  }
 
   using NativeWindow = HWND;
 
@@ -277,8 +318,10 @@ class Window::Impl final : public SharedObject::Impl {
   };
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  int draggingAreaBottom = ::GetSystemMetrics(SM_CYMENU);
+  int draggingAreaBottom = ::GetSystemMetrics(SM_CYSIZE);
+  int menuWidth          = ::GetSystemMetrics(SM_CXSIZE) * 3;
 #endif /* WIN32 */
+  std::list<Rectangle> draggingAreaMasks;
 };
 
 }  // namespace yaul

@@ -27,10 +27,15 @@ void Window::Impl::adjustClientRect(HWND window, RECT* const rect) noexcept {
   *rect = monitorInfo.rcWork;
 }
 
-LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
+LRESULT Window::Impl::hitTest(Position cursor, bool lockMutex) noexcept {
   RECT window;
   if (::GetWindowRect(nativeWindow, &window) == 0)
     return HTNOWHERE;
+
+  if (lockMutex) {
+    std::lock_guard<std::mutex> lock(mutex);
+    return hitTest(cursor, false);
+  }
 
   if (resizable) {
     enum EdgeMask : uint8_t {
@@ -58,12 +63,31 @@ LRESULT Window::Impl::hitTest(POINT cursor) const noexcept {
     // clang-format on
   }
 
-  // TODO (WattsUp) sysmenu
+  if (cursor.y < (window.top + draggingAreaBottom)) {
+    if (cursor.x > (window.right - menuWidth))
+      return HTCLIENT;  // Mouse is in the minimize, maximize, close area
 
-  if (cursor.y < (window.top + draggingAreaBottom))
+    // Translate cursor to window coordinates
+    cursor -= Position{window.left, window.top};
+
+    for (const auto& rect : draggingAreaMasks) {
+      if (cursor && rect)
+        return HTCLIENT;  // Mouse is in a mask
+    }
+
     return HTCAPTION;
+  }
 
   return HTCLIENT;
+}
+
+void Window::Impl::showSysMenu(Position position) const noexcept {
+  HMENU sysMenu = GetSystemMenu(nativeWindow, FALSE);
+  int command =
+      TrackPopupMenu(sysMenu, TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_RETURNCMD,
+                     position.x, position.y, 0, nativeWindow, nullptr);
+  if (command != 0)
+    SendMessage(nativeWindow, WM_SYSCOMMAND, command, 0);
 }
 
 LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
@@ -91,7 +115,7 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
       std::lock_guard<std::mutex> lock(window->mutex);
       if (window->borderless && !window->fullscreen) {
         return window->hitTest(
-            POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)});
+            Position{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}, false);
       }
 
     } break;
@@ -108,6 +132,44 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
         return TRUE;
       }
     } break;
+    case WM_NCRBUTTONUP: {
+      Position cursor{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+      if (window->hitTest(cursor, true) == HTCAPTION) {
+        window->showSysMenu(cursor);
+        return 0;
+      }
+    } break;
+    case WM_INITMENU: {
+      std::lock_guard<std::mutex> lock(window->mutex);
+      bool minimized = window->showState == ShowState::minimize;
+      bool maximized = window->showState == ShowState::maximize;
+      bool restored  = !window->fullscreen && !minimized && !maximized;
+
+      // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+      auto menu = reinterpret_cast<HMENU>(wParam);
+
+      enableMenuItem(menu, SC_RESTORE, minimized || maximized);
+      enableMenuItem(menu, SC_MOVE, restored);
+      enableMenuItem(menu, SC_SIZE, window->resizable && restored);
+      enableMenuItem(menu, SC_MAXIMIZE,
+                     window->resizable && !window->fullscreen && !maximized);
+      enableMenuItem(menu, SC_MINIMIZE, window->resizable && !minimized);
+      return 0;
+    }
+    case WM_SIZE: {
+      std::lock_guard<std::mutex> lock(window->mutex);
+      switch (wParam) {
+        case SIZE_MAXIMIZED:
+          window->showState = ShowState::maximize;
+          return 0;
+        case SIZE_MINIMIZED:
+          window->showState = ShowState::minimize;
+          return 0;
+        case SIZE_RESTORED:
+          window->showState = ShowState::restore;
+          return 0;
+      }
+    }
     case WM_CREATE:
       return 0;
     case WM_CLOSE:
