@@ -21,7 +21,7 @@ constexpr UINT YAUL_WM_STOP_LOOP  = (WM_USER + 1);
 #endif /* WIN32 */
 
 #if defined(__linux) || defined(__linux__)
-#include <X11/Xlib.h>
+#include "xcb.hpp"
 #endif /* __linux__ */
 
 namespace yaul {
@@ -49,7 +49,7 @@ class Window::Impl final : public SharedObject::Impl {
    *
    * @return true when the window has been signaled to close, false otherwise
    */
-  bool shouldClose() const noexcept;
+  [[nodiscard]] bool shouldClose() const noexcept;
 
   /**
    * @brief Render any pending commands to the backbuffer then swap to present
@@ -84,7 +84,7 @@ class Window::Impl final : public SharedObject::Impl {
    * border if present
    * @return Size in pixels
    */
-  Size getSize(bool innerSize = true) const noexcept;
+  [[nodiscard]] Size getSize(bool innerSize = true) const noexcept;
 
   /**
    * @brief Set the position of the window
@@ -296,8 +296,7 @@ class Window::Impl final : public SharedObject::Impl {
 #endif /* WIN32 */
 
 #if defined(__linux) || defined(__linux__)
-  using NativeWindow        = ::Window;
-  NativeWindow nativeWindow = 0;
+  xcb_window_t nativeWindow = 0;
 #endif /* __linux__ */
 
   std::atomic<bool> closeFlag = false;
@@ -326,12 +325,22 @@ class Window::Impl final : public SharedObject::Impl {
         ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
         ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)
 #endif /* WIN32 */
+#if defined(__linux) || defined(__linux__)
+            // TODO (WattsUp) get dimensions from WM, test hidden window?
+            5,
+        5, 5, 5
+#endif /* __linux__ */
   };
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   int draggingAreaBottom = ::GetSystemMetrics(SM_CYSIZE);
   int menuWidth          = ::GetSystemMetrics(SM_CXSIZE) * 3;
 #endif /* WIN32 */
+#if defined(__linux) || defined(__linux__)
+  // TODO (WattsUp) get dimensions from WM, test hidden window?
+  int draggingAreaBottom = 30;
+  int menuWidth          = 21 * 3;
+#endif /* __linux__ */
   std::list<Rectangle> draggingAreaMasks;
 };
 

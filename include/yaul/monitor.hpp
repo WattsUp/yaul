@@ -6,11 +6,15 @@
 #include <yaul/dimensions.hpp>
 #include <yaul/object.hpp>
 
+#if defined(__linux) || defined(__linux__)
+#include <xcb/randr.h>
+#endif /* __linux__ */
+
 namespace yaul {
 
 class YAUL_API Monitor final : public Object {
  public:
-  static constexpr int defaultDPI = 96;
+  static constexpr float defaultDPMM = 96.0F / units::mmPerInch;
 
   /**
    * @brief Enumerate the monitors available on the system
@@ -38,11 +42,11 @@ class YAUL_API Monitor final : public Object {
   [[nodiscard]] Size getSize() const noexcept;
 
   /**
-   * @brief Get the DPI (dots/pixels per inch) of the monitor
+   * @brief Get the DPMM (dots/pixels per millimeter) of the monitor
    *
-   * @return int in DPI, defaultDPI if unknown
+   * @return float in DPMM, defaultDPMM if unknown
    */
-  [[nodiscard]] int getDPI() const noexcept;
+  [[nodiscard]] float getDPMM() const noexcept;
 
   /**
    * @brief Get the position of the monitor relative to the primary. Distance

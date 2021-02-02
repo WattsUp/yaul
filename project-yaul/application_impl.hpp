@@ -14,11 +14,6 @@
 #include <thread>
 #include <unordered_map>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include <Windows.h>
-
-#endif /* WIN32 */
-
 namespace yaul {
 
 class Application::Impl final : public Object::Impl {
@@ -74,6 +69,7 @@ class Application::Impl final : public Object::Impl {
    */
   void stop() noexcept;
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   struct NewWindowInfo {
     Size size;
     string id;
@@ -81,11 +77,11 @@ class Application::Impl final : public Object::Impl {
     Result result;
     bool complete = false;
   };
+  NewWindowInfo* newWindowInfo = nullptr;
+#endif /* WIN32 */
 
   std::mutex mutex;
   std::condition_variable cv;
-
-  NewWindowInfo* newWindowInfo = nullptr;
 
   std::unordered_map<string, Window> windows{};
 

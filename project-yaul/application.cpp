@@ -31,46 +31,56 @@ Window Application::Impl::addWindow(
     const char* id,
     Size size,
     Window::ShowState showState) noexcept(false) {
-  // Send new window info to loop
-  NewWindowInfo windowInfo;
-  windowInfo.size = size;
-  windowInfo.id   = string(id);
+  Window window;
+  string idString(id);
 
   {
     // Check for window already created
     std::unique_lock<std::mutex> lock(mutex);
-    auto search = windows.find(windowInfo.id);
+    auto search = windows.find(idString);
     if (search != windows.end())
       return search->second;
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    // Need event loop thread to create window
+
+    // Send new window info to loop
+    NewWindowInfo windowInfo;
+    windowInfo.size = size;
+    windowInfo.id   = idString;
+
     newWindowInfo = &windowInfo;
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     // Send new window message
     if (::PostThreadMessageW(::GetThreadId(thread->native_handle()),
                              YAUL_WM_NEW_WINDOW, 0, 0) == 0)
       throw std::runtime_error("Failed to post new window message");
-
-#endif /* WIN32 */
-
     // Wait for loop to create window
     // windowInfo.complete is true once consumed
     cv.wait(lock, [&windowInfo] { return windowInfo.complete; });
+
+    if (windowInfo.result.failed())
+      throw std::runtime_error(static_cast<char*>(windowInfo.result));
+
+    window = windowInfo.createdWindow;
+#else /* !WIN32 */
+    // Create window in this thread, no need to be created in event loop
+    window = Window(size, "", Window::ShowState::hidden);
+    windows.emplace(idString, window);
+#endif /* WIN32 */
   }
 
-  if (windowInfo.result.failed())
-    throw std::runtime_error(static_cast<char*>(windowInfo.result));
-
   // Lookup and apply any styling from XML/CSS
-  windowInfo.createdWindow.setTitle(id);         // TODO (WattsUp) get title
-  windowInfo.createdWindow.setBorderless(true);  // Yaul draws custom a menubar
+  window.setTitle(id);         // TODO (WattsUp) get title
+  window.setBorderless(true);  // Yaul draws custom a menubar
 
-  windowInfo.createdWindow.setShowState(showState);
+  window.setShowState(showState);
 
-  return windowInfo.createdWindow;
+  return window;
 }
 
 void Application::Impl::waitForAllWindowsToClose() noexcept {
+  stop();
   if (windows.empty() || !running)
     return;
 

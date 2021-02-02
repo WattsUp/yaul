@@ -37,7 +37,7 @@ void Application::Impl::loop() noexcept {
         try {
           Window window(newWindowInfo->size, "", Window::ShowState::hidden);
           newWindowInfo->createdWindow = window;
-          windows.emplace(newWindowInfo->id, std::move(window));
+          windows.emplace(newWindowInfo->id, window);
         } catch (const std::exception& e) {
           newWindowInfo->result = Result(e.what());
         }

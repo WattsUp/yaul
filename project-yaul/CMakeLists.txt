@@ -14,10 +14,15 @@ set (SRCS
 )
 
 set (SRCS_UNIX
+  "application_unix.cpp"
+  "monitor_unix.cpp"
+  "window_unix.cpp"
+  "xcb_unix.cpp"
 )
 
 set (SRCS_WIN
   "application_win32.cpp"
+  "monitor_win32.cpp"
   "window_win32.cpp"
 )
 

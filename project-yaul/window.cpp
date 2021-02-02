@@ -25,7 +25,9 @@ Window::Impl::~Impl() noexcept {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   ::RemovePropW(nativeWindow, L"yaul");
   ::DestroyWindow(nativeWindow);
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 bool Window::Impl::shouldClose() const noexcept {
@@ -43,7 +45,9 @@ void Window::Impl::pollEvents() noexcept {
     ::TranslateMessage(&msg);
     ::DispatchMessageW(&msg);
   }
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
@@ -63,7 +67,12 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
   return ::SetWindowPos(nativeWindow, nullptr, 0, 0, size.width, size.height,
                         SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER |
                             SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
-#endif /* WIN32 */
+
+#elif defined(__linux) || defined(__linux__)
+  if (innerSize)
+    return false;
+  return false;  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 Size Window::Impl::getSize(bool innerSize) const noexcept {
@@ -76,7 +85,12 @@ Size Window::Impl::getSize(bool innerSize) const noexcept {
   }
 
   Size size = {rect.right - rect.left, rect.bottom - rect.top};
-#endif /* WIN32 */
+
+#elif defined(__linux) || defined(__linux__)
+  Size size{0, 0};  // TODO (WattsUp)
+  if (borderless || innerSize) {
+  }
+#endif /* WIN32, __linux__ */
   return size;
 }
 
@@ -89,7 +103,12 @@ bool Window::Impl::setPosition(Position position,
   return ::SetWindowPos(nativeWindow, nullptr, position.x, position.y, 0, 0,
                         SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER |
                             SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
-#endif /* WIN32 */
+
+#elif defined(__linux) || defined(__linux__)
+  if (monitor != nullptr || position.x == 0)  // TODO (WattsUp)
+    return false;
+  return false;
+#endif /* WIN32, __linux__ */
 }
 
 void Window::Impl::setFullscreen(bool fullscreen,
@@ -142,7 +161,11 @@ void Window::Impl::setFullscreen(bool fullscreen,
                    size.height,
                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
                        SWP_ASYNCWINDOWPOS);
-#endif /* WIN32 */
+
+#elif defined(__linux) || defined(__linux__)
+    if (overwriteSave)  // TODO (WattsUp)
+      return;
+#endif /* WIN32, __linux__ */
   } else {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, fullscreenPreStyle);
@@ -151,7 +174,9 @@ void Window::Impl::setFullscreen(bool fullscreen,
                    SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
 
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+    // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
   }
 }
 
@@ -168,7 +193,9 @@ void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
   WideChar wTitle(title);
   ::SetWindowTextW(nativeWindow,
                    wTitle.c_str());  // Not asynchronous, unlock mutex before
-#endif                               /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+    // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
@@ -191,7 +218,9 @@ void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
                    SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
   }
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 void Window::Impl::setResizingBorder(Edges border, bool lockMutex) noexcept {
@@ -232,7 +261,9 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
 
   // Preserve inner size when changing
   setSize(innerSize, true);
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 
   setShowState(showState, false);
 }
@@ -260,7 +291,9 @@ void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
       ::DwmExtendFrameIntoClientArea(nativeWindow, &margins);
     }
   }
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 void Window::Impl::setDraggingArea(int bottom,
@@ -317,7 +350,9 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
       ShowWindowAsync(nativeWindow, SW_RESTORE);
       break;
   }
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  // TODO (WattsUp)
+#endif /* WIN32, __linux__ */
 }
 
 /******************************** Public Class ********************************/

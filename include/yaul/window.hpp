@@ -8,9 +8,7 @@
 namespace yaul {
 
 // Forward declaration for friend status
-// namespace Application::Impl{
 class Application;
-// }
 
 class YAUL_API Window final : public SharedObject {
  public:
@@ -48,7 +46,7 @@ class YAUL_API Window final : public SharedObject {
    *
    * @return true when the window has been signaled to close, false otherwise
    */
-  bool shouldClose() noexcept;
+  [[nodiscard]] bool shouldClose() noexcept;
 
   /**
    * @brief Render any pending commands to the backbuffer then swap to present

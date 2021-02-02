@@ -3,6 +3,12 @@
 
 namespace yaul {
 
+namespace units {
+
+constexpr float mmPerInch = 25.4F;
+
+};
+
 /**
  * @brief Size object containing a width and a height. List initialization order
  * {width, height}

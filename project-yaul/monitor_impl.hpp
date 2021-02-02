@@ -8,6 +8,10 @@
 
 #include <list>
 
+#if defined(__linux) || defined(__linux__)
+#include "xcb.hpp"
+#endif /* __linux__ */
+
 namespace yaul {
 
 class Monitor::Impl : public Object::Impl {
@@ -34,11 +38,11 @@ class Monitor::Impl : public Object::Impl {
   [[nodiscard]] inline Size getSize() const noexcept { return size; }
 
   /**
-   * @brief Get the DPI (dots/pixels per inch) of the monitor
+   * @brief Get the DPMM (dots/pixels per millimeter) of the monitor
    *
-   * @return int in DPI, defaultDPI if unknown
+   * @return float in DPMM, defaultDPMM if unknown
    */
-  [[nodiscard]] inline int getDPI() const noexcept { return dpi; }
+  [[nodiscard]] inline float getDPMM() const noexcept { return dpmm; }
 
   /**
    * @brief Get the position of the monitor relative to the primary. Distance
@@ -68,7 +72,7 @@ class Monitor::Impl : public Object::Impl {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   /**
-   * @brief Construct a new Monitor implementation by by queuering display
+   * @brief Construct a new Monitor implementation by queuering display
    * settings with the specified display device name
    *
    * @param deviceName to query display settings
@@ -78,12 +82,23 @@ class Monitor::Impl : public Object::Impl {
   explicit Impl(wchar_t* deviceName,
                 wchar_t* friendlyName,
                 bool primary = false) noexcept;
-#endif /* WIN32 */
+#elif defined(__linux) || defined(__linux__)
+  /**
+   * @brief Construct a new Monitor implementation by queruering monitor info
+   * and xcb connection
+   *
+   * @param screen device monitor is in reference to
+   * @param monitorInfo xcb struct containing size, position, DPMM info, etc.
+   */
+  Impl(xcb_screen_t* screen, xcb_randr_monitor_info_t* monitorInfo) noexcept;
+
+  xcb_screen_t* screen = nullptr;
+#endif /* WIN32, __linux__ */
 
   string name;
   Size size;
   Position position;
-  int dpi      = defaultDPI;
+  float dpmm   = defaultDPMM;
   bool primary = false;
 };
 
