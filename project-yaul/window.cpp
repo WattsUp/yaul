@@ -26,7 +26,16 @@ Window::Impl::~Impl() noexcept {
   ::RemovePropW(nativeWindow, L"yaul");
   ::DestroyWindow(nativeWindow);
 #elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
+  try {
+    windowIDs.erase(nativeWindow);
+
+    const auto* xcb = XCB::instance();
+    xcb_free_colormap(xcb->connection(), colormap);
+    xcb_destroy_window(xcb->connection(), nativeWindow);
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
 #endif /* WIN32, __linux__ */
 }
 
@@ -36,18 +45,6 @@ bool Window::Impl::shouldClose() const noexcept {
 
 void Window::Impl::render() noexcept {
   // TODO (WattsUp)
-}
-
-void Window::Impl::pollEvents() noexcept {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  MSG msg;
-  while (::PeekMessageW(&msg, nativeWindow, 0, 0, PM_REMOVE) != 0) {
-    ::TranslateMessage(&msg);
-    ::DispatchMessageW(&msg);
-  }
-#elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
-#endif /* WIN32, __linux__ */
 }
 
 bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
@@ -69,9 +66,29 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
                             SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
 
 #elif defined(__linux) || defined(__linux__)
-  if (innerSize)
+  if (!innerSize) {
+    size -= Size{16, 16};
+    if (size.width <= 0 || size.height <= 0) {
+      Logger::instance().log(LogLevel::warning,
+                             "Cannot resize window to smaller than 1x1");
+      return false;
+    }
+  }
+
+  try {
+    const auto* xcb = XCB::instance();
+
+    const uint16_t mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+    const std::array<uint32_t, 2> values = {static_cast<uint32_t>(size.width),
+                                            static_cast<uint32_t>(size.height)};
+    xcb_configure_window(xcb->connection(), nativeWindow, mask, values.data());
+
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
     return false;
-  return false;  // TODO (WattsUp)
+  }
+  return true;
 #endif /* WIN32, __linux__ */
 }
 
@@ -87,8 +104,9 @@ Size Window::Impl::getSize(bool innerSize) const noexcept {
   Size size = {rect.right - rect.left, rect.bottom - rect.top};
 
 #elif defined(__linux) || defined(__linux__)
-  Size size{0, 0};  // TODO (WattsUp)
+  Size size = lastSizeUpdate;
   if (borderless || innerSize) {
+    // TODO (WattsUp)
   }
 #endif /* WIN32, __linux__ */
   return size;
@@ -194,7 +212,18 @@ void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
   ::SetWindowTextW(nativeWindow,
                    wTitle.c_str());  // Not asynchronous, unlock mutex before
 #elif defined(__linux) || defined(__linux__)
-    // TODO (WattsUp)
+  try {
+    const auto* xcb = XCB::instance();
+
+    xcb_change_property(xcb->connection(), XCB_PROP_MODE_REPLACE, nativeWindow,
+                        xcb->atom(XCB::NET_WM_NAME),
+                        xcb->atom(XCB::UTF8_STRING), 8,
+                        static_cast<uint32_t>(strlen(title)), title);
+
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
 #endif /* WIN32, __linux__ */
 }
 
@@ -333,9 +362,8 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
     return setShowState(state, false);
   }
 
-  showState = state;
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  showState = state;
   switch (state) {
     case ShowState::hidden:
       ShowWindowAsync(nativeWindow, SW_HIDE);
@@ -351,7 +379,86 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
       break;
   }
 #elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
+  if (showState == state)
+    return;
+
+  try {
+    const auto* xcb = XCB::instance();
+
+    if (state == ShowState::hidden) {
+      // Unmap window and notify
+      xcb_unmap_window(xcb->connection(), nativeWindow);
+
+      xcb_unmap_notify_event_t event;
+      event.response_type  = XCB_UNMAP_NOTIFY;
+      event.event          = xcb->screen()->root;
+      event.window         = nativeWindow;
+      event.from_configure = False;
+      YAUL_XCB_SEND(xcb, xcb->screen()->root,
+                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
+                        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                    event);
+      xcb_flush(xcb->connection());
+      showState = state;
+      mapped    = false;
+      return;
+    }
+    if (showState == ShowState::minimize || !mapped) {
+      xcb_map_window(xcb->connection(), nativeWindow);
+      mapped = true;
+    } else if (state == ShowState::minimize) {
+      // Send ICONIC state
+      xcb_client_message_event_t event;
+      event.response_type  = XCB_CLIENT_MESSAGE;
+      event.format         = 32;
+      event.sequence       = 0;
+      event.window         = nativeWindow;
+      event.type           = xcb->atom(XCB::WM_CHANGE_STATE);
+      event.data.data32[0] = XCB_ICCCM_WM_STATE_ICONIC;
+      event.data.data32[1] = 0;
+      event.data.data32[2] = 0;
+      event.data.data32[3] = 0;
+      event.data.data32[4] = 0;
+      YAUL_XCB_SEND(xcb, xcb->screen()->root,
+                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
+                        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                    event);
+    } else if (state == ShowState::maximize) {
+      xcb_client_message_event_t event;
+      event.response_type  = XCB_CLIENT_MESSAGE;
+      event.format         = 32;
+      event.sequence       = 0;
+      event.window         = nativeWindow;
+      event.type           = xcb->atom(XCB::NET_WM_STATE);
+      event.data.data32[0] = 1;  // Set state
+      event.data.data32[1] = xcb->atom(XCB::NET_WM_STATE_MAXIMIZED_HORZ);
+      event.data.data32[2] = xcb->atom(XCB::NET_WM_STATE_MAXIMIZED_VERT);
+      event.data.data32[3] = 0;
+      event.data.data32[4] = 0;
+      YAUL_XCB_SEND(xcb, xcb->screen()->root,
+                    XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+                        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                    event);
+    }
+
+    auto cookie =
+        xcb_icccm_get_wm_hints_unchecked(xcb->connection(), nativeWindow);
+    xcb_icccm_wm_hints_t hints;
+    if (xcb_icccm_get_wm_hints_reply(xcb->connection(), cookie, &hints,
+                                     nullptr) != 0) {
+      if (state == ShowState::minimize) {
+        xcb_icccm_wm_hints_set_iconic(&hints);
+      } else {
+        xcb_icccm_wm_hints_set_normal(&hints);
+      }
+      xcb_icccm_set_wm_hints(xcb->connection(), nativeWindow, &hints);
+    }
+
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
+  showState = state;
 #endif /* WIN32, __linux__ */
 }
 
@@ -380,10 +487,6 @@ bool Window::shouldClose() noexcept {
 
 void Window::render() noexcept {
   impl<Impl>()->render();
-}
-
-void Window::pollEvents() noexcept {
-  impl<Impl>()->pollEvents();
 }
 
 void Window::closeRequest() noexcept {

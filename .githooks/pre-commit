@@ -20,7 +20,7 @@ fi
 
 # Run tests
 export PYTHONIOENCODING=utf-8
-python tools/Clang-TidyFormat.py --tidy --format --quiet --staged
+python3 tools/Clang-TidyFormat.py --tidy --format --quiet --staged
 RESULT=$?
 
 # Restore changes

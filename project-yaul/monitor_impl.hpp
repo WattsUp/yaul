@@ -87,12 +87,9 @@ class Monitor::Impl : public Object::Impl {
    * @brief Construct a new Monitor implementation by queruering monitor info
    * and xcb connection
    *
-   * @param screen device monitor is in reference to
    * @param monitorInfo xcb struct containing size, position, DPMM info, etc.
    */
-  Impl(xcb_screen_t* screen, xcb_randr_monitor_info_t* monitorInfo) noexcept;
-
-  xcb_screen_t* screen = nullptr;
+  explicit Impl(xcb_randr_monitor_info_t* monitorInfo) noexcept;
 #endif /* WIN32, __linux__ */
 
   string name;

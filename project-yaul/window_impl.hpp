@@ -59,13 +59,6 @@ class Window::Impl final : public SharedObject::Impl {
   void render() noexcept;
 
   /**
-   * @brief Check and process pending events for the window, namely input
-   * keypresses or mouse actions
-   *
-   */
-  void pollEvents() noexcept;
-
-  /**
    * @brief Set the size of the window, both dimensions must be non-zero
    * Dimensions include the size of the border if present (see setBorderless)
    * and innerSize is false
@@ -296,7 +289,28 @@ class Window::Impl final : public SharedObject::Impl {
 #endif /* WIN32 */
 
 #if defined(__linux) || defined(__linux__)
+ public:
+  /**
+   * @brief Process an event from the xcb event queue
+   *
+   * @param event pointer to event (does not take ownership)
+   */
+  static void processEvent(xcb_generic_event_t* event) noexcept;
+
+  inline bool operator==(const xcb_window_t& windowID) const noexcept {
+    return nativeWindow == windowID;
+  }
+
+ private:
+  // NOLINTNEXTLINE (cppcoreguidelines-avoid-non-const-global-variables)
+  static std::unordered_map<xcb_window_t, Window::Impl*> windowIDs;
+
   xcb_window_t nativeWindow = 0;
+  xcb_colormap_t colormap   = 0;
+
+  bool mapped = false;
+
+  Size lastSizeUpdate;
 #endif /* __linux__ */
 
   std::atomic<bool> closeFlag = false;
@@ -318,28 +332,28 @@ class Window::Impl final : public SharedObject::Impl {
   bool borderless       = false;
   bool borderlessShadow = true;
 
-  Edges resizingBorder {
+  static constexpr int defaultResizingBorder = 8;
+  Edges resizingBorder
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-        ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-        ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-        ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)
+      {::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+       ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
+       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)};
 #endif /* WIN32 */
 #if defined(__linux) || defined(__linux__)
-            // TODO (WattsUp) get dimensions from WM, test hidden window?
-            5,
-        5, 5, 5
+  = {defaultResizingBorder, defaultResizingBorder, defaultResizingBorder,
+     defaultResizingBorder};
 #endif /* __linux__ */
-  };
 
+  static constexpr int defaultDraggingAreaBottom = 30;
+  static constexpr int defaultMenuWidth          = 21 * 3;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   int draggingAreaBottom = ::GetSystemMetrics(SM_CYSIZE);
   int menuWidth          = ::GetSystemMetrics(SM_CXSIZE) * 3;
 #endif /* WIN32 */
 #if defined(__linux) || defined(__linux__)
-  // TODO (WattsUp) get dimensions from WM, test hidden window?
-  int draggingAreaBottom = 30;
-  int menuWidth          = 21 * 3;
+  int draggingAreaBottom = defaultDraggingAreaBottom;
+  int menuWidth          = defaultMenuWidth;
 #endif /* __linux__ */
   std::list<Rectangle> draggingAreaMasks;
 };

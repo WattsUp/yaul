@@ -79,10 +79,12 @@ Window Application::Impl::addWindow(
   return window;
 }
 
-void Application::Impl::waitForAllWindowsToClose() noexcept {
-  stop();
+void Application::Impl::waitForAllWindowsToClose(bool force) noexcept {
   if (windows.empty() || !running)
     return;
+
+  if (force)
+    stop();
 
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, [this]() { return windows.empty(); });
@@ -107,8 +109,8 @@ Window Application::apiAddWindow(const char* id,
   return Window();
 }
 
-void Application::waitForAllWindowsToClose() noexcept {
-  impl<Impl>()->waitForAllWindowsToClose();
+void Application::waitForAllWindowsToClose(bool force) noexcept {
+  impl<Impl>()->waitForAllWindowsToClose(force);
 }
 
 }  // namespace yaul

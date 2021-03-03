@@ -56,13 +56,6 @@ class YAUL_API Window final : public SharedObject {
   void render() noexcept;
 
   /**
-   * @brief Check and process pending events for the window, namely input
-   * keypresses or mouse actions
-   *
-   */
-  void pollEvents() noexcept;
-
-  /**
    * @brief Request the window be closed
    *
    */

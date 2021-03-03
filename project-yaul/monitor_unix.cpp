@@ -6,33 +6,46 @@ namespace yaul {
 
 std::list<Monitor::Impl> Monitor::Impl::enumerate() noexcept {
   std::list<Monitor::Impl> monitors;
-  auto* screen = xcb_setup_roots_iterator(xcb_get_setup(xcb->connection)).data;
+  const XCB* xcb = nullptr;
+  try {
+    xcb = XCB::instance();
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+    return monitors;
+  }
 
   auto* monitorInfos = xcb_randr_get_monitors_reply(
-      xcb->connection,
-      xcb_randr_get_monitors(xcb->connection, screen->root, False), nullptr);
+      xcb->connection(),
+      xcb_randr_get_monitors(xcb->connection(), xcb->screen()->root, False),
+      nullptr);
 
-  if (monitorInfos == nullptr)
+  if (monitorInfos == nullptr) {
+    xcb_flush(xcb->connection());
     return monitors;
+  }
 
   // auto num  = xcb_randr_get_monitors_monitors_length(monitorInfos);
   auto iter = xcb_randr_get_monitors_monitors_iterator(monitorInfos);
   while (iter.rem != 0) {
-    monitors.emplace_back(Monitor::Impl(screen, iter.data));
+    monitors.emplace_back(Monitor::Impl(iter.data));
 
     xcb_randr_monitor_info_next(&iter);
   }
+  xcb_flush(xcb->connection());
   return monitors;
 }
 
-Monitor::Impl::Impl(xcb_screen_t* screen,
-                    xcb_randr_monitor_info_t* monitorInfo) noexcept
-    : screen(screen) {
-  XCBPtr<xcb_get_atom_name_reply_t> nameReply(xcb_get_atom_name_reply(
-      xcb->connection, xcb_get_atom_name(xcb->connection, monitorInfo->name),
-      nullptr));
-  name = string(xcb_get_atom_name_name(nameReply.get()),
-                xcb_get_atom_name_name_length(nameReply.get()));
+Monitor::Impl::Impl(xcb_randr_monitor_info_t* monitorInfo) noexcept {
+  try {
+    const auto* xcb = XCB::instance();
+    XCBPtr<xcb_get_atom_name_reply_t> nameReply(xcb_get_atom_name_reply(
+        xcb->connection(),
+        xcb_get_atom_name(xcb->connection(), monitorInfo->name), nullptr));
+    name = string(xcb_get_atom_name_name(nameReply.get()),
+                  xcb_get_atom_name_name_length(nameReply.get()));
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
 
   size.width  = static_cast<int>(monitorInfo->width);
   size.height = static_cast<int>(monitorInfo->height);

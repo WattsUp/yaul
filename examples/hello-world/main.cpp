@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
 
   try {
     auto window = app.addWindow(u8"unique window id");
+    // window = app.addWindow(u8"unique window id 2");
     window.setTitle(u8"🌍Hello World🌍");
     window.setPosition({128, 256}, &monitors.back());
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     // window.setFullscreen(true);
     // std::this_thread::sleep_for(std::chrono::seconds(1));
     // // window.setFullscreen(true);

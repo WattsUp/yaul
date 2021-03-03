@@ -52,8 +52,9 @@ class Application::Impl final : public Object::Impl {
   /**
    * @brief Blocking call returned once all windows have closed
    *
+   * @param force will forcefully close all windows
    */
-  void waitForAllWindowsToClose() noexcept;
+  void waitForAllWindowsToClose(bool force = false) noexcept;
 
  private:
   /**

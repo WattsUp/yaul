@@ -17,6 +17,18 @@ constexpr float mmPerInch = 25.4F;
 struct Size {
   int width  = 0;
   int height = 0;
+
+  inline Size& operator+=(const Size& rhs) noexcept {
+    width += rhs.width;
+    height += rhs.height;
+    return *this;
+  }
+
+  inline Size& operator-=(const Size& rhs) noexcept {
+    width -= rhs.width;
+    height -= rhs.height;
+    return *this;
+  }
 };
 
 /**
