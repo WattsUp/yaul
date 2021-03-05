@@ -183,13 +183,10 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
       HDC hdc = nullptr;
       hdc     = BeginPaint(hWindow, &ps);
 
-      Size size = window->getSize(false);
+      Size size = window->getSize();
       string text =
           std::to_string(size.width) + "x" + std::to_string(size.height);
       TextOutA(hdc, 0, 16, text.c_str(), static_cast<int>(text.size()));
-      size = window->getSize(true);
-      text = std::to_string(size.width) + "x" + std::to_string(size.height);
-      TextOutA(hdc, 0, 32, text.c_str(), static_cast<int>(text.size()));
       RECT rect;
       ::GetWindowRect(hWindow, &rect);
       text = std::to_string(rect.left) + " " + std::to_string(rect.top);

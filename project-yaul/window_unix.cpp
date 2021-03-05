@@ -106,6 +106,9 @@ void Window::Impl::processEvent(xcb_generic_event_t* event) noexcept {
 
       window->lastSizeUpdate.width  = configureEvent->width;
       window->lastSizeUpdate.height = configureEvent->height;
+
+      window->frameMarginsDirty = true;
+
       Logger::instance().log(LogLevel::debug,
                              "Configure " +
                                  std::to_string(configureEvent->width) + "x" +
@@ -120,6 +123,43 @@ void Window::Impl::processEvent(xcb_generic_event_t* event) noexcept {
           "Unknown XCB Event " + std::to_string(event->response_type));
       break;
   }
+}
+
+Edges Window::Impl::updateFrameMargins() noexcept {
+  if (!frameMarginsDirty)
+    return frameMargins;
+
+  try {
+    const auto* xcb = XCB::instance();
+
+    if (xcb->atom(XCB::NET_FRAME_EXTENTS) != XCB_ATOM_NONE) {
+      auto frameExtents = YAUL_XCB_REPLY(xcb, get_property, False, nativeWindow,
+                                         xcb->atom(XCB::NET_FRAME_EXTENTS),
+                                         xcb->atom(XCB::CARDINAL), 0, 4);
+      if (frameExtents && frameExtents->type == XCB_ATOM_CARDINAL &&
+          frameExtents->format == 32 && frameExtents->value_len == 4) {
+        // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+        const auto* data = reinterpret_cast<uint32_t*>(
+            xcb_get_property_value(frameExtents.get()));
+        frameMargins.left   = *(data + 0);
+        frameMargins.right  = *(data + 1);
+        frameMargins.top    = *(data + 2);
+        frameMargins.bottom = *(data + 3);
+        frameMarginsDirty   = false;
+        xcb_flush(xcb->connection());
+        return frameMargins;
+      }
+    }
+
+    // TODO (WattsUp) traverse the virtual roots tree to calculate the frame
+    // margin
+
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
+
+  return frameMargins;
 }
 
 }  // namespace yaul

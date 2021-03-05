@@ -10,6 +10,18 @@ constexpr float mmPerInch = 25.4F;
 };
 
 /**
+ * @brief Edges object containing top, right, bottom, and left dimensions. List
+ * initialization order {top, right, bottom, left}
+ *
+ */
+struct Edges {
+  int top    = 0;
+  int right  = 0;
+  int bottom = 0;
+  int left   = 0;
+};
+
+/**
  * @brief Size object containing a width and a height. List initialization order
  * {width, height}
  *
@@ -27,6 +39,18 @@ struct Size {
   inline Size& operator-=(const Size& rhs) noexcept {
     width -= rhs.width;
     height -= rhs.height;
+    return *this;
+  }
+
+  inline Size& operator+=(const Edges& edges) noexcept {
+    width += edges.left;
+    height += edges.top + edges.bottom;
+    return *this;
+  }
+
+  inline Size& operator-=(const Edges& edges) noexcept {
+    width -= edges.left + edges.right;
+    height -= edges.top + edges.bottom;
     return *this;
   }
 };
@@ -49,6 +73,18 @@ struct Position {
   inline Position& operator-=(const Position& translation) noexcept {
     x -= translation.x;
     y -= translation.y;
+    return *this;
+  }
+
+  inline Position& operator+=(const Edges& edges) noexcept {
+    x += edges.left;
+    y += edges.top;
+    return *this;
+  }
+
+  inline Position& operator-=(const Edges& edges) noexcept {
+    x -= edges.left;
+    y -= edges.top;
     return *this;
   }
 };
@@ -86,9 +122,45 @@ struct Rectangle {
   int width  = 0;
   int height = 0;
 
+  inline Rectangle& operator+=(const Size& rhs) noexcept {
+    width += rhs.width;
+    height += rhs.height;
+    return *this;
+  }
+
+  inline Rectangle& operator-=(const Size& rhs) noexcept {
+    width -= rhs.width;
+    height -= rhs.height;
+    return *this;
+  }
+
   inline Rectangle& operator+=(const Position& translation) noexcept {
     x += translation.x;
     y += translation.y;
+    return *this;
+  }
+
+  inline Rectangle& operator-=(const Position& translation) noexcept {
+    x -= translation.x;
+    y -= translation.y;
+    return *this;
+  }
+
+  inline Rectangle& operator+=(const Edges& edges) noexcept {
+    // Grow rectangle by edges without moving existing rectangle
+    x -= edges.left;
+    y -= edges.top;
+    width += edges.left;
+    height += edges.top + edges.bottom;
+    return *this;
+  }
+
+  inline Rectangle& operator-=(const Edges& edges) noexcept {
+    // Shrink rectangle by edges without moving existing rectangle
+    x += edges.left;
+    y += edges.top;
+    width -= edges.left + edges.right;
+    height -= edges.top + edges.bottom;
     return *this;
   }
 };
@@ -127,18 +199,6 @@ inline bool operator&&(const Position& point, const Rectangle& rect) {
 inline bool operator&&(const Rectangle& rect, const Position& point) {
   return point && rect;
 }
-
-/**
- * @brief Edges object containing top, right, bottom, and left dimensions. List
- * initialization order {top, right, bottom, left}
- *
- */
-struct Edges {
-  int top    = 0;
-  int right  = 0;
-  int bottom = 0;
-  int left   = 0;
-};
 
 }  // namespace yaul
 

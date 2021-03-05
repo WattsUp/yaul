@@ -60,27 +60,27 @@ class Window::Impl final : public SharedObject::Impl {
 
   /**
    * @brief Set the size of the window, both dimensions must be non-zero
-   * Dimensions include the size of the border if present (see setBorderless)
-   * and innerSize is false
+   * Dimensions correspond to drawable (client) area, does not include frame
+   * decoration/border
    *
    * @param size in pixels
-   * @param innerSize true indicates width and height exclude border dimensions.
-   * only applicable if window has a border, see setBorderless
    * @return true if size was successfully adjusted, false otherwise
    */
-  bool setSize(Size size, bool innerSize = true) noexcept;
+  bool setSize(Size size) noexcept;
 
   /**
    * @brief Get the size of the window
+   * Dimensions corresponds to drawable (client) area, does not include frame
+   * decoration/border
    *
-   * @param innerSize true will exclude border if present, false will include
-   * border if present
    * @return Size in pixels
    */
-  [[nodiscard]] Size getSize(bool innerSize = true) const noexcept;
+  [[nodiscard]] Size getSize() const noexcept;
 
   /**
    * @brief Set the position of the window
+   * Position corresponds to drawable (client) area, does not include frame
+   * decoration/border
    *
    * @param position distance between top edges and left edges of monitor and
    * window, -1 will center respective axis
@@ -309,6 +309,17 @@ class Window::Impl final : public SharedObject::Impl {
   xcb_colormap_t colormap   = 0;
 
   bool mapped = false;
+
+  /**
+   * @brief Update and get the frame margins of the window by querying window
+   * manager or manually calculating. Caches result
+   *
+   * @return Edges
+   */
+  Edges updateFrameMargins() noexcept;
+
+  Edges frameMargins;
+  bool frameMarginsDirty = true;
 
   Size lastSizeUpdate;
 #endif /* __linux__ */

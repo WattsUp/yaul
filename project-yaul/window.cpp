@@ -12,7 +12,7 @@ Window::Impl::Impl(Size size,
     throw std::invalid_argument("Both dimensions of size must be non-zero");
 
   createNativeWindow();
-  setSize(size, true);
+  setSize(size);
   setTitle(title);
   setShowState(state);
 
@@ -47,12 +47,12 @@ void Window::Impl::render() noexcept {
   // TODO (WattsUp)
 }
 
-bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
+bool Window::Impl::setSize(Size size) noexcept {
   if (size.width == 0 || size.height == 0)
     return false;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  if (innerSize && !borderless) {
+  if (!borderless) {
     RECT rect{0, 0, size.width, size.height};
     auto style =
         static_cast<DWORD>(::GetWindowLongPtrW(nativeWindow, GWL_STYLE));
@@ -66,21 +66,54 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
                             SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
 
 #elif defined(__linux) || defined(__linux__)
-  if (!innerSize) {
-    size -= Size{16, 16};
-    if (size.width <= 0 || size.height <= 0) {
-      Logger::instance().log(LogLevel::warning,
-                             "Cannot resize window to smaller than 1x1");
-      return false;
-    }
-  }
-
   try {
     const auto* xcb = XCB::instance();
 
     const uint16_t mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
     const std::array<uint32_t, 2> values = {static_cast<uint32_t>(size.width),
                                             static_cast<uint32_t>(size.height)};
+    xcb_configure_window(xcb->connection(), nativeWindow, mask, values.data());
+    frameMarginsDirty = true;
+
+    xcb_flush(xcb->connection());
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+    return false;
+  }
+  return true;
+#endif /* WIN32, __linux__ */
+}
+
+Size Window::Impl::getSize() const noexcept {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  RECT rect;
+  ::GetClientRect(nativeWindow, &rect);
+
+  return Size{rect.right - rect.left, rect.bottom - rect.top};
+#elif defined(__linux) || defined(__linux__)
+  return lastSizeUpdate;
+#endif /* WIN32, __linux__ */
+}
+
+bool Window::Impl::setPosition(Position position,
+                               const Monitor* monitor) noexcept {
+  if (monitor != nullptr)
+    position += monitor->getPosition();
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+
+  return ::SetWindowPos(nativeWindow, nullptr, position.x, position.y, 0, 0,
+                        SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER |
+                            SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
+
+#elif defined(__linux) || defined(__linux__)
+  position -= updateFrameMargins();
+
+  try {
+    const auto* xcb = XCB::instance();
+
+    const uint16_t mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y;
+    const std::array<uint32_t, 2> values = {static_cast<uint32_t>(position.x),
+                                            static_cast<uint32_t>(position.y)};
     xcb_configure_window(xcb->connection(), nativeWindow, mask, values.data());
 
     xcb_flush(xcb->connection());
@@ -92,43 +125,6 @@ bool Window::Impl::setSize(Size size, bool innerSize) noexcept {
 #endif /* WIN32, __linux__ */
 }
 
-Size Window::Impl::getSize(bool innerSize) const noexcept {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  RECT rect;
-  if (borderless || innerSize) {
-    ::GetClientRect(nativeWindow, &rect);
-  } else {
-    ::GetWindowRect(nativeWindow, &rect);
-  }
-
-  Size size = {rect.right - rect.left, rect.bottom - rect.top};
-
-#elif defined(__linux) || defined(__linux__)
-  Size size = lastSizeUpdate;
-  if (borderless || innerSize) {
-    // TODO (WattsUp)
-  }
-#endif /* WIN32, __linux__ */
-  return size;
-}
-
-bool Window::Impl::setPosition(Position position,
-                               const Monitor* monitor) noexcept {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  if (monitor != nullptr)
-    position += monitor->getPosition();
-
-  return ::SetWindowPos(nativeWindow, nullptr, position.x, position.y, 0, 0,
-                        SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER |
-                            SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS) != 0;
-
-#elif defined(__linux) || defined(__linux__)
-  if (monitor != nullptr || position.x == 0)  // TODO (WattsUp)
-    return false;
-  return false;
-#endif /* WIN32, __linux__ */
-}
-
 void Window::Impl::setFullscreen(bool fullscreen,
                                  const Monitor* monitor,
                                  bool lockMutex) noexcept {
@@ -137,13 +133,12 @@ void Window::Impl::setFullscreen(bool fullscreen,
     return setFullscreen(fullscreen, monitor, false);
   }
 
-  bool overwriteSave = (!this->fullscreen) && fullscreen;
-
   this->fullscreen = fullscreen;
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  bool overwriteSave = (!this->fullscreen) && fullscreen;
   if (fullscreen) {
     // Save state information to restore to but do not overwrite if already
     // fullscreen
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     if (overwriteSave) {
       ::GetWindowPlacement(nativeWindow, &fullscreenPrePlacement);
       fullscreenPreStyle = ::GetWindowLongPtrW(nativeWindow, GWL_STYLE);
@@ -179,23 +174,21 @@ void Window::Impl::setFullscreen(bool fullscreen,
                    size.height,
                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
                        SWP_ASYNCWINDOWPOS);
-
-#elif defined(__linux) || defined(__linux__)
-    if (overwriteSave)  // TODO (WattsUp)
-      return;
-#endif /* WIN32, __linux__ */
   } else {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, fullscreenPreStyle);
     ::SetWindowPlacement(nativeWindow, &fullscreenPrePlacement);
     ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
                    SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
-
-#elif defined(__linux) || defined(__linux__)
-    // TODO (WattsUp)
-#endif /* WIN32, __linux__ */
   }
+#elif defined(__linux) || defined(__linux__)
+  try {
+    XCB::instance()->setWMState(nativeWindow, fullscreen,
+                                XCB::WMState::fullscreen);
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
+#endif /* WIN32, __linux__ */
 }
 
 void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
@@ -248,7 +241,11 @@ void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
   }
 #elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
+  try {
+    XCB::instance()->setWMHints(nativeWindow, !borderless, resizable);
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
 #endif /* WIN32, __linux__ */
 }
 
@@ -268,11 +265,11 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
   }
 
   this->borderless = borderless;
+  Size innerSize   = getSize();
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  Size innerSize = getSize(true);
-
-  // Borderless related source from https://github.com/melak47/BorderlessWindow
+  // Borderless related source from
+  // https://github.com/melak47/BorderlessWindow
   WindowStyle style = WindowStyle::windowed;
   if (borderless) {
     style = compositionEnabled() ? WindowStyle::aeroBorderless
@@ -288,11 +285,15 @@ void Window::Impl::setBorderless(bool borderless, bool lockMutex) noexcept {
                  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
                      SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
 
-  // Preserve inner size when changing
-  setSize(innerSize, true);
 #elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
+  try {
+    XCB::instance()->setWMHints(nativeWindow, !borderless, resizable);
+  } catch (const std::exception& e) {
+    Logger::instance().log(LogLevel::error, e.what());
+  }
 #endif /* WIN32, __linux__ */
+  // Preserve inner size when changing
+  setSize(innerSize);
 
   setShowState(showState, false);
 }
@@ -310,8 +311,8 @@ void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
     if (!borderless)
       shadow = false;
 
-    // Note GDI cannot paint this margin away, use other graphics to swap frame
-    // buffers
+    // Note GDI cannot paint this margin away, use other graphics to swap
+    // frame buffers
     if (shadow) {
       static const MARGINS margins{1, 1, 1, 1};
       ::DwmExtendFrameIntoClientArea(nativeWindow, &margins);
@@ -321,7 +322,7 @@ void Window::Impl::setBorderlessShadow(bool shadow, bool lockMutex) noexcept {
     }
   }
 #elif defined(__linux) || defined(__linux__)
-  // TODO (WattsUp)
+  // TODO (WattsUp), impossible?
 #endif /* WIN32, __linux__ */
 }
 
@@ -424,21 +425,7 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
                         XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
                     event);
     } else if (state == ShowState::maximize) {
-      xcb_client_message_event_t event;
-      event.response_type  = XCB_CLIENT_MESSAGE;
-      event.format         = 32;
-      event.sequence       = 0;
-      event.window         = nativeWindow;
-      event.type           = xcb->atom(XCB::NET_WM_STATE);
-      event.data.data32[0] = 1;  // Set state
-      event.data.data32[1] = xcb->atom(XCB::NET_WM_STATE_MAXIMIZED_HORZ);
-      event.data.data32[2] = xcb->atom(XCB::NET_WM_STATE_MAXIMIZED_VERT);
-      event.data.data32[3] = 0;
-      event.data.data32[4] = 0;
-      YAUL_XCB_SEND(xcb, xcb->screen()->root,
-                    XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-                        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
-                    event);
+      xcb->setWMState(nativeWindow, true, XCB::WMState::maximize);
     }
 
     auto cookie =
@@ -462,7 +449,8 @@ void Window::Impl::setShowState(ShowState state, bool lockMutex) noexcept {
 #endif /* WIN32, __linux__ */
 }
 
-/******************************** Public Class ********************************/
+/******************************** Public Class
+ * ********************************/
 
 Window::Window() noexcept : SharedObject(std::shared_ptr<Impl>(nullptr)) {}
 
@@ -493,12 +481,12 @@ void Window::closeRequest() noexcept {
   impl<Impl>()->closeRequest();
 }
 
-bool Window::setSize(Size size, bool innerSize) noexcept {
-  return impl<Impl>()->setSize(size, innerSize);
+bool Window::setSize(Size size) noexcept {
+  return impl<Impl>()->setSize(size);
 }
 
-Size Window::getSize(bool innerSize) const noexcept {
-  return impl<Impl>()->getSize(innerSize);
+Size Window::getSize() const noexcept {
+  return impl<Impl>()->getSize();
 }
 
 bool Window::setPosition(Position position, const Monitor* monitor) noexcept {

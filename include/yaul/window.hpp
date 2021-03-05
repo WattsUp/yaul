@@ -63,27 +63,27 @@ class YAUL_API Window final : public SharedObject {
 
   /**
    * @brief Set the size of the window, both dimensions must be non-zero
-   * Dimensions include the size of the border if present (see setBorderless)
-   * and innerSize is false
+   * Dimensions correspond to drawable (client) area, does not include frame
+   * decoration/border
    *
    * @param size in pixels
-   * @param innerSize true indicates width and height exclude border dimensions.
-   * only applicable if window has a border, see setBorderless
    * @return true if size was successfully adjusted, false otherwise
    */
-  bool setSize(Size size, bool innerSize = true) noexcept;
+  bool setSize(Size size) noexcept;
 
   /**
    * @brief Get the size of the window
+   * Dimensions corresponds to drawable (client) area, does not include frame
+   * decoration/border
    *
-   * @param innerSize true will exclude border if present, false will include
-   * border if present
    * @return Size in pixels
    */
-  [[nodiscard]] Size getSize(bool innerSize = true) const noexcept;
+  [[nodiscard]] Size getSize() const noexcept;
 
   /**
    * @brief Set the position of the window
+   * Position corresponds to drawable (client) area, does not include frame
+   * decoration/border
    *
    * @param position distance between top edges and left edges of monitor and
    * window, -1 will center respective axis
@@ -174,6 +174,8 @@ class YAUL_API Window final : public SharedObject {
    * @param state
    */
   void setShowState(ShowState state) noexcept;
+
+  // TODO (WattsUp) setAttention to flash taskbar icon
 
   friend class Application;  // For Window()
 
