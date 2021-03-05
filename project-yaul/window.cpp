@@ -133,9 +133,9 @@ void Window::Impl::setFullscreen(bool fullscreen,
     return setFullscreen(fullscreen, monitor, false);
   }
 
-  this->fullscreen = fullscreen;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   bool overwriteSave = (!this->fullscreen) && fullscreen;
+  this->fullscreen   = fullscreen;
   if (fullscreen) {
     // Save state information to restore to but do not overwrite if already
     // fullscreen
@@ -182,6 +182,7 @@ void Window::Impl::setFullscreen(bool fullscreen,
                        SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS);
   }
 #elif defined(__linux) || defined(__linux__)
+  this->fullscreen = fullscreen;
   try {
     XCB::instance()->setWMState(nativeWindow, fullscreen,
                                 XCB::WMState::fullscreen);
