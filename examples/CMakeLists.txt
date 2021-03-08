@@ -11,6 +11,11 @@ foreach(EXAMPLE ${EXAMPLES})
     message("MINGW")
   endif()
 
+  # Clang on Windows gets confused with main and WinMain
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND WIN32)
+    target_link_options(${EXAMPLE} PRIVATE "-Xlinker" "/SUBSYSTEM:WINDOWS")
+  endif()
+
   target_link_libraries(${EXAMPLE} PRIVATE yaul entrypoint)
 endforeach()
 

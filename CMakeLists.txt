@@ -46,11 +46,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Generate compile commands for clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
-# Clang on Windows gets confused with main and WinMain
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND WIN32 )
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker /SUBSYSTEM:WINDOWS")
-endif()
-
 if( WIN32 )
   # define UNICODE and_UNICODE definition on Windows
   # Both definitions are required
@@ -166,11 +161,21 @@ foreach(INDEX RANGE ${TARGETS_LENGTH})
   elseif (${CONFIG} MATCHES "^WinMain$" AND WIN32)
     # Looks for int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* args, int nShowCmd)
     add_executable(${TARGET} WIN32)
+
+    # Clang on Windows gets confused with main and WinMain
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+      target_link_options(${TARGET} PRIVATE "-Xlinker" "/SUBSYSTEM:WINDOWS")
+    endif()
   elseif(NOT ${TARGET} MATCHES "^.*-win$" OR WIN32)
     # Looks for int main(int argc, char* argv[])
     add_executable(${TARGET})
     if (WIN32)
       target_compile_definitions(${TARGET} PRIVATE WIN_CONSOLE)
+
+      # Clang on Windows gets confused with main and WinMain
+      if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_link_options(${TARGET} PRIVATE "-Xlinker" "/SUBSYSTEM:CONSOLE")
+      endif()
     endif()
   else()
     message("Windows only, excluding from all: ${TARGET}")

@@ -92,7 +92,7 @@ const constexpr char* VERSION_GIT_SHA     = "{version.gitSHA}";
 #define VERSION_GIT_SHA "{version.gitSHA}"
 #endif /* VERSION_DEFINES */
 
-#endif /* _COMMON_VERSION_H_ */
+#endif /* COMMON_VERSION_H */
 """
 
   if args.output:

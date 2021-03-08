@@ -75,4 +75,4 @@ class YAUL_API Monitor final : public Object {
 
 }  // namespace yaul
 
-#endif /* _YAUL_MONITOR_HPP_ */
+#endif /* YAUL_MONITOR_HPP */

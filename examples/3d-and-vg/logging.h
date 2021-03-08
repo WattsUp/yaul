@@ -7,4 +7,4 @@
 void initializeLogFile(const char* filename);
 void libyaulLog(::yaul::LogLevel level, const char* msg) noexcept;
 
-#endif /* _YAUL_EXAMPLE_LOGGING_HPP_ */
+#endif /* YAUL_EXAMPLE_LOGGING_HPP */

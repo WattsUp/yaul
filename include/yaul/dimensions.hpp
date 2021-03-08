@@ -202,4 +202,4 @@ inline bool operator&&(const Rectangle& rect, const Position& point) {
 
 }  // namespace yaul
 
-#endif /* _YAUL_VG_DIMENSIONS_HPP_ */
+#endif /* YAUL_VG_DIMENSIONS_HPP */

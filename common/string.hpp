@@ -45,7 +45,9 @@ class WideChar final {
    *
    * @return wchar_t*
    */
-  [[nodiscard]] wchar_t* c_str() const noexcept { return buffer.get(); }
+  [[nodiscard]] inline const wchar_t* c_str() const noexcept {
+    return buffer.get();
+  }
 
   /**
    * @brief Convert a wide char string to a UTF8 string
@@ -72,4 +74,4 @@ class WideChar final {
 }  // namespace yaul
 #endif /* WIN32 */
 
-#endif /* _YAUL_STRING_HPP_ */
+#endif /* YAUL_STRING_HPP */

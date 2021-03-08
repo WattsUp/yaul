@@ -82,4 +82,4 @@ class YAUL_API SharedObject {
 
 }  // namespace yaul
 
-#endif /* _YAUL_OBJECT_HPP_ */
+#endif /* YAUL_OBJECT_HPP */

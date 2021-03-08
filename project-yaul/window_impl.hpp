@@ -371,4 +371,4 @@ class Window::Impl final : public SharedObject::Impl {
 
 }  // namespace yaul
 
-#endif /* _YAUL_WINDOW_IMPL_HPP_ */
+#endif /* YAUL_WINDOW_IMPL_HPP */

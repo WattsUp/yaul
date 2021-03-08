@@ -203,4 +203,4 @@ class YAUL_API Window final : public SharedObject {
 
 }  // namespace yaul
 
-#endif /* _YAUL_WINDOW_HPP_ */
+#endif /* YAUL_WINDOW_HPP */

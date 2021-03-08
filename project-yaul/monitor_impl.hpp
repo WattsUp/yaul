@@ -101,4 +101,4 @@ class Monitor::Impl : public Object::Impl {
 
 }  // namespace yaul
 
-#endif /* _YAUL_MONITOR_IMPL_HPP_ */
+#endif /* YAUL_MONITOR_IMPL_HPP */

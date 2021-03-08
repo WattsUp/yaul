@@ -12,7 +12,7 @@
 #elif __GNUC__ >= 4 || defined(__clang__)
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define YAUL_API __attribute__((visibility("default")))
-#endif /* _MSC_VER */
+#endif /* MSC_VER */
 
 #ifndef YAUL_API
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
@@ -274,4 +274,4 @@ YAUL_CONSTEXPR uint8_t decodeHexChar(const char c) noexcept(false) {
       "invalid character encountered while decoding hex character");
 }
 
-#endif /* _YAUL_COMMON_HPP_ */
+#endif /* YAUL_COMMON_HPP */

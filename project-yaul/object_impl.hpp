@@ -41,4 +41,4 @@ class SharedObject::Impl {
 
 }  // namespace yaul
 
-#endif /* _YAUL_OBJECT_IMPL_HPP_ */
+#endif /* YAUL_OBJECT_IMPL_HPP */

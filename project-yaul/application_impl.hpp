@@ -94,4 +94,4 @@ class Application::Impl final : public Object::Impl {
 
 }  // namespace yaul
 
-#endif /* _YAUL_APPLICATION_IMPL_HPP_ */
+#endif /* YAUL_APPLICATION_IMPL_HPP */

@@ -23,4 +23,4 @@
 
 // }  // namespace yaul
 
-#endif /* _YAUL_HPP_ */
+#endif /* YAUL_HPP */

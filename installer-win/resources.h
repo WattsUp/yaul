@@ -3,4 +3,4 @@
 
 #define RES_ARCHIVE 1  // NOLINT (cppcoreguidelines-macro-usage)
 
-#endif /* _INSTALLER_RESOURCES_H_ */
+#endif /* INSTALLER_RESOURCES_H */

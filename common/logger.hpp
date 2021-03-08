@@ -22,7 +22,7 @@ class Logger {
    *
    * @return Logger&
    */
-  static Logger& instance() {
+  static Logger& instance() noexcept {
     static Logger instance;
     return instance;
   }
@@ -30,10 +30,10 @@ class Logger {
   /**
    * @brief Log a message to the user provided logging function
    *
-   * @param level to log message
+   * @param level to log message at
    * @param msg to log
    */
-  inline void log(LogLevel level, const string& msg) {
+  inline void log(LogLevel level, const string& msg) noexcept {
     if (loggerFunction != nullptr) {
       loggerFunction(level, msg.c_str());
     }
@@ -45,8 +45,10 @@ class Logger {
    * @param logger to direct messages to
    */
   inline void setLogger(logger_t logger) { loggerFunction = logger; }
+
+  // TODO (WattsUp) add usability functions and fmt library
 };
 
 }  // namespace yaul
 
-#endif /* _YAUL_LOGGER_HPP_ */
+#endif /* YAUL_LOGGER_HPP */

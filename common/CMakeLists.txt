@@ -6,7 +6,9 @@ foreach(target ${TARGETS})
 endforeach()
 
 set (TEST_SRCS
+  "logger_test.cpp"
   "main_test.cpp"
+  "string_test.cpp"
 )
 
 target_sources("gtester" PRIVATE ${TEST_SRCS})

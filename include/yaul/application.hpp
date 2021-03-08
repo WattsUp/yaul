@@ -90,4 +90,4 @@ class YAUL_API Application final : public Object {
 
 }  // namespace yaul
 
-#endif /* _YAUL_APPLICATION_HPP_ */
+#endif /* YAUL_APPLICATION_HPP */
