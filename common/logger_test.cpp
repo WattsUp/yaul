@@ -6,7 +6,10 @@ using Level  = ::yaul::LogLevel;
 using string = ::yaul::string;
 
 class Logger : public ::testing::Test {
- private:
+ protected:
+  Level latestLogLevel;
+  string latestLogOutput;
+
   void logFunction(Level level, const char* msg) noexcept {
     latestLogLevel  = level;
     latestLogOutput = msg;
@@ -16,10 +19,6 @@ class Logger : public ::testing::Test {
     if (object != nullptr)
       object->logFunction(level, msg);
   }
-
- protected:
-  Level latestLogLevel;
-  string latestLogOutput;
 
   static Logger* object;
   virtual void SetUp() {

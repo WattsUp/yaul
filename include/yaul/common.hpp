@@ -250,6 +250,8 @@ class YAUL_API Result {
 
 /******************************* Miscellaneous ********************************/
 
+namespace yaul {
+
 /**
  * @brief Decode an integer from a hex character representation
  * '0' to '9' is 0 to 9
@@ -273,5 +275,7 @@ YAUL_CONSTEXPR uint8_t decodeHexChar(const char c) noexcept(false) {
   throw std::invalid_argument(
       "invalid character encountered while decoding hex character");
 }
+
+}  // namespace yaul
 
 #endif /* YAUL_COMMON_HPP */

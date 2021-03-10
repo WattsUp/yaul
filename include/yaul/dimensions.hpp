@@ -30,28 +30,62 @@ struct Size {
   int width  = 0;
   int height = 0;
 
+  /**
+   * @brief Add two sizes together by adding their dimensions
+   *
+   * @param a
+   * @param b
+   * @return Size
+   */
+  friend inline Size operator+(const Size& a, const Size& b) {
+    return {a.width + b.width, a.height + b.height};
+  }
   inline Size& operator+=(const Size& rhs) noexcept {
-    width += rhs.width;
-    height += rhs.height;
-    return *this;
+    return *this = *this + rhs;
   }
 
+  /**
+   * @brief Subtract two sizes together by subtracting their dimensions
+   *
+   * @param a
+   * @param b
+   * @return Size
+   */
+  friend inline Size operator-(const Size& a, const Size& b) {
+    return {a.width - b.width, a.height - b.height};
+  }
   inline Size& operator-=(const Size& rhs) noexcept {
-    width -= rhs.width;
-    height -= rhs.height;
-    return *this;
+    return *this = *this - rhs;
   }
 
+  /**
+   * @brief Grow a size object by an edges object
+   *
+   * @param size
+   * @param edges
+   * @return Size
+   */
+  friend inline Size operator+(const Size& size, const Edges& edges) {
+    return {size.width + (edges.left + edges.right),
+            size.height + (edges.top + edges.bottom)};
+  }
   inline Size& operator+=(const Edges& edges) noexcept {
-    width += edges.left;
-    height += edges.top + edges.bottom;
-    return *this;
+    return *this = *this + edges;
   }
 
+  /**
+   * @brief Shrink a size object by an edges object
+   *
+   * @param size
+   * @param edges
+   * @return Size
+   */
+  friend inline Size operator-(const Size& size, const Edges& edges) {
+    return {size.width - (edges.left + edges.right),
+            size.height - (edges.top + edges.bottom)};
+  }
   inline Size& operator-=(const Edges& edges) noexcept {
-    width -= edges.left + edges.right;
-    height -= edges.top + edges.bottom;
-    return *this;
+    return *this = *this - edges;
   }
 };
 
@@ -64,52 +98,66 @@ struct Position {
   int x = 0;
   int y = 0;
 
+  /**
+   * @brief Translate a point by adding a translation
+   *
+   * @param point
+   * @param translation
+   * @return Position
+   */
+  friend inline Position operator+(const Position& point,
+                                   const Position& translation) {
+    return {point.x + translation.x, point.y + translation.y};
+  }
   inline Position& operator+=(const Position& translation) noexcept {
-    x += translation.x;
-    y += translation.y;
-    return *this;
+    return *this = *this + translation;
   }
 
+  /**
+   * @brief Translate a point by subtracting a translation
+   *
+   * @param point
+   * @param translation
+   * @return Position
+   */
+  friend inline Position operator-(const Position& point,
+                                   const Position& translation) {
+    return {point.x - translation.x, point.y - translation.y};
+  }
   inline Position& operator-=(const Position& translation) noexcept {
-    x -= translation.x;
-    y -= translation.y;
-    return *this;
+    return *this = *this - translation;
   }
 
+  /**
+   * @brief Translate a position object by adding an edges object (left and top
+   * edges translate x and y)
+   *
+   * @param point
+   * @param edges
+   * @return Position
+   */
+  friend inline Position operator+(const Position& point, const Edges& edges) {
+    return {point.x + edges.left, point.y + edges.top};
+  }
   inline Position& operator+=(const Edges& edges) noexcept {
-    x += edges.left;
-    y += edges.top;
-    return *this;
+    return *this = *this + edges;
   }
 
+  /**
+   * @brief Translate a position object by subtracting an edges object (left and
+   * top edges translate x and y)
+   *
+   * @param point
+   * @param edges
+   * @return Position
+   */
+  friend inline Position operator-(const Position& point, const Edges& edges) {
+    return {point.x - edges.left, point.y - edges.top};
+  }
   inline Position& operator-=(const Edges& edges) noexcept {
-    x -= edges.left;
-    y -= edges.top;
-    return *this;
+    return *this = *this - edges;
   }
 };
-
-/**
- * @brief Translate a point by adding a translation
- *
- * @param point
- * @param translation
- * @return Position
- */
-inline Position operator+(const Position& point, const Position& translation) {
-  return {point.x + translation.x, point.y + translation.y};
-}
-
-/**
- * @brief Translate a point by subtracting a translation
- *
- * @param point
- * @param translation
- * @return Position
- */
-inline Position operator-(const Position& point, const Position& translation) {
-  return {point.x - translation.x, point.y - translation.y};
-}
 
 /**
  * @brief Rectangle object containing x and y offsets and a width
@@ -122,60 +170,104 @@ struct Rectangle {
   int width  = 0;
   int height = 0;
 
-  inline Rectangle& operator+=(const Size& rhs) noexcept {
-    width += rhs.width;
-    height += rhs.height;
-    return *this;
+  /**
+   * @brief Add a size to a rectangle by adding their dimensions
+   *
+   * @param rectangle
+   * @param size
+   * @return Rectangle
+   */
+  friend inline Rectangle operator+(const Rectangle& rectangle,
+                                    const Size& size) {
+    return {rectangle.x, rectangle.y, rectangle.width + size.width,
+            rectangle.height + size.height};
+  }
+  inline Rectangle& operator+=(const Size& size) noexcept {
+    return *this = *this + size;
   }
 
-  inline Rectangle& operator-=(const Size& rhs) noexcept {
-    width -= rhs.width;
-    height -= rhs.height;
-    return *this;
+  /**
+   * @brief Subtract a size from a rectangle by subtracting their dimensions
+   *
+   * @param rectangle
+   * @param size
+   * @return Rectangle
+   */
+  friend inline Rectangle operator-(const Rectangle& rectangle,
+                                    const Size& size) {
+    return {rectangle.x, rectangle.y, rectangle.width - size.width,
+            rectangle.height - size.height};
+  }
+  inline Rectangle& operator-=(const Size& size) noexcept {
+    return *this = *this - size;
   }
 
+  /**
+   * @brief Translate a rectangle
+   *
+   * @param rectangle
+   * @param translation
+   * @return Rectangle
+   */
+  friend inline Rectangle operator+(const Rectangle& rectangle,
+                                    const Position& translation) {
+    return {rectangle.x + translation.x, rectangle.y + translation.y,
+            rectangle.width, rectangle.height};
+  }
   inline Rectangle& operator+=(const Position& translation) noexcept {
-    x += translation.x;
-    y += translation.y;
-    return *this;
+    return *this = *this + translation;
   }
 
+  /**
+   * @brief Translate a rectangle
+   *
+   * @param rectangle
+   * @param translation
+   * @return Rectangle
+   */
+  friend inline Rectangle operator-(const Rectangle& rectangle,
+                                    const Position& translation) {
+    return {rectangle.x - translation.x, rectangle.y - translation.y,
+            rectangle.width, rectangle.height};
+  }
   inline Rectangle& operator-=(const Position& translation) noexcept {
-    x -= translation.x;
-    y -= translation.y;
-    return *this;
+    return *this = *this - translation;
   }
 
+  /**
+   * @brief Grow a rectangle by edges without moving existing rectangle
+   *
+   * @param rectangle
+   * @param edges
+   * @return Rectangle
+   */
+  friend inline Rectangle operator+(const Rectangle& rectangle,
+                                    const Edges& edges) {
+    return {rectangle.x - edges.left, rectangle.y - edges.top,
+            rectangle.width + (edges.left + edges.right),
+            rectangle.height + (edges.top + edges.bottom)};
+  }
   inline Rectangle& operator+=(const Edges& edges) noexcept {
-    // Grow rectangle by edges without moving existing rectangle
-    x -= edges.left;
-    y -= edges.top;
-    width += edges.left;
-    height += edges.top + edges.bottom;
-    return *this;
+    return *this = *this + edges;
   }
 
+  /**
+   * @brief Shrink a rectangle by edges without moving existing rectangle
+   *
+   * @param rectangle
+   * @param edges
+   * @return Rectangle
+   */
+  friend inline Rectangle operator-(const Rectangle& rectangle,
+                                    const Edges& edges) {
+    return {rectangle.x + edges.left, rectangle.y + edges.top,
+            rectangle.width - (edges.left + edges.right),
+            rectangle.height - (edges.top + edges.bottom)};
+  }
   inline Rectangle& operator-=(const Edges& edges) noexcept {
-    // Shrink rectangle by edges without moving existing rectangle
-    x += edges.left;
-    y += edges.top;
-    width -= edges.left + edges.right;
-    height -= edges.top + edges.bottom;
-    return *this;
+    return *this = *this - edges;
   }
 };
-
-/**
- * @brief Translate a rectangle by adding a translation
- *
- * @param rect
- * @param point
- * @return Rectangle
- */
-inline Rectangle operator+(const Rectangle& rect, const Position& translation) {
-  return {rect.x + translation.x, rect.y + translation.y, rect.width,
-          rect.height};
-}
 
 /**
  * @brief Check if point is within rectangle (including edges)
@@ -186,13 +278,13 @@ inline Rectangle operator+(const Rectangle& rect, const Position& translation) {
  * otherwise
  */
 inline bool operator&&(const Position& point, const Rectangle& rect) {
-  if (point.x < rect.x)
+  if (point.x < rect.x && point.x < (rect.x + rect.width))
     return false;
-  if (point.x > (rect.x + rect.width))
+  if (point.x > rect.x && point.x > (rect.x + rect.width))
     return false;
-  if (point.y < rect.y)
+  if (point.y < rect.y && point.y < (rect.y + rect.height))
     return false;
-  if (point.y > (rect.y + rect.height))
+  if (point.y > rect.y && point.y > (rect.y + rect.height))
     return false;
   return true;
 }

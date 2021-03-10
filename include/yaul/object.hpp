@@ -18,6 +18,15 @@ class YAUL_API Object {
 
   class Impl;
 
+  /**
+   * @brief Check the pointer for a set implementation
+   *
+   * @return true if pointer to implementation is not nullptr, false otherwise
+   */
+  [[nodiscard]] bool inline implSet() const noexcept {
+    return static_cast<bool>(pImpl);
+  }
+
  protected:
   YAUL_DEFINE_INHERIT(Object);
 
@@ -29,7 +38,8 @@ class YAUL_API Object {
   void setImpl(std::unique_ptr<Impl> p) noexcept;
 
   /**
-   * @brief Access the implementation object as a derived object
+   * @brief Access the implementation object as a derived object, not checked
+   * for nullptr
    *
    * @tparam T derived Impl typename
    * @return T* pointer to implementation (dynamically casted to derived object)
@@ -54,6 +64,15 @@ class YAUL_API SharedObject {
   YAUL_DEFINE_DESTRUCT_MOVE_COPY(SharedObject)
 
   class Impl;
+
+  /**
+   * @brief Check the pointer for a set implementation
+   *
+   * @return true if pointer to implementation is not nullptr, false otherwise
+   */
+  [[nodiscard]] bool inline implSet() const noexcept {
+    return static_cast<bool>(pImpl);
+  }
 
  protected:
   YAUL_DEFINE_INHERIT_SHARED(SharedObject);
