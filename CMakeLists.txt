@@ -72,16 +72,19 @@ include(CTest)
 set (TARGETS_NODIST
   "gtester"       # Unit tester common to all projects
   "installer-win" # Windows self-extracting installer
+  "yaul-mocked"   # yaul core library built with mocked API calls
 )
 
 set (TARGETS_NODISTCONFIG
   "default" # gtester
   "default" # installer-win
+  "library" # yaul-mocked
 )
 
 set (TARGETS_NODISTDIR
-  "common" # gtester
-  "installer-win" # installer-win
+  "common"              # gtester
+  "installer-win"       # installer-win
+  "project-yaul-mocked" # yaul-mocked
 )
 
 # Targets included in the public distributable
@@ -150,6 +153,7 @@ foreach(INDEX RANGE ${TARGETS_LENGTH})
     if(${TYPE} MATCHES "^SHARED_LIBRARY")
       # Get #define compatible target name
       string(TOUPPER ${TARGET} TARGET_DEFINE)
+      string(REPLACE "-MOCKED" "" TARGET_DEFINE ${TARGET_DEFINE})
       string(REPLACE "-" "_" TARGET_DEFINE ${TARGET_DEFINE})
 
       # Set linking as shared library for all targets
@@ -209,6 +213,10 @@ foreach(INDEX RANGE ${TARGETS_LENGTH})
     add_custom_command(TARGET ${TARGET} PRE_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/res/" "$<TARGET_FILE_DIR:${TARGET}>/${PROJECT_NAME}/res")
+  endif()
+
+  if(${TARGET} MATCHES "^.*-mocked$")
+    target_compile_definitions(${TARGET} PRIVATE YAUL_MOCKED)
   endif()
 
 endforeach()

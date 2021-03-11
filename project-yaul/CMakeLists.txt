@@ -27,10 +27,12 @@ set (SRCS_WIN
 )
 
 target_sources("yaul" PRIVATE ${SRCS} ${SRCS_API} $<IF:$<BOOL:${WIN32}>, ${SRCS_WIN}, ${SRCS_UNIX}>)
+target_sources("yaul-mocked" PRIVATE ${SRCS} ${SRCS_API} $<IF:$<BOOL:${WIN32}>, ${SRCS_WIN}, ${SRCS_UNIX}>)
 
 set (TEST_SRCS
   "common_test.cpp"
   "dimensions_test.cpp"
+  "monitor_test.cpp"
   "object_test.cpp"
 )
 
