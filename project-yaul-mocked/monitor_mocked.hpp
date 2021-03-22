@@ -25,11 +25,11 @@ const std::array<MonitorInfo, count> monitors = {
                 96 / ::yaul::units::mmPerInch,
                 false},
     MonitorInfo{"Dell P2213 (Digital - DisplayPort)",
-                {1920, 0, 1920, 1080},
+                {1920, 0, 19200, 10800},
                 3023 / ::yaul::units::mmPerInch,
                 true},
     MonitorInfo{"Dell P2213 (Digital - HDMI)",
-                {0, -1080, 1920, 1080},
+                {100, -5678, 1234, 5678},
                 48 / ::yaul::units::mmPerInch,
                 false},
 };
@@ -88,7 +88,6 @@ const std::array<AdapterInfo, count> adapters = {
 #undef EnumDisplayDevicesW
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define EnumDisplayDevicesW EnumDisplayDevicesW_mocked
-
 BOOL EnumDisplayDevicesW_mocked(LPCWSTR lpDevice,
                                 DWORD iDevNum,
                                 PDISPLAY_DEVICEW lpDisplayDevice,
@@ -97,7 +96,6 @@ BOOL EnumDisplayDevicesW_mocked(LPCWSTR lpDevice,
 #undef EnumDisplaySettingsW
 // NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
 #define EnumDisplaySettingsW EnumDisplaySettingsW_mocked
-
 BOOL EnumDisplaySettingsW_mocked(LPCWSTR lpszDeviceName,
                                  DWORD iModeNum,
                                  DEVMODEW* lpDevMode);

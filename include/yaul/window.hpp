@@ -122,7 +122,8 @@ class YAUL_API Window final : public SharedObject {
    * @brief Set the width of the resizing border, a transparent area around the
    * window that captures mouse event for resizing.
    *
-   * @param border width of each edge's border in pixels
+   * @param border width of each edge's border in pixels, 0 will not generate
+   * resizing handles for that edge
    */
   void setResizingBorder(Edges border) noexcept;
 
@@ -174,6 +175,13 @@ class YAUL_API Window final : public SharedObject {
    * @param state
    */
   void setShowState(ShowState state) noexcept;
+
+  /**
+   * @brief Get the show state of the window, see ShowState
+   *
+   * @return ShowState
+   */
+  [[nodiscard]] ShowState getShowState() const noexcept;
 
   // TODO (WattsUp) setAttention to flash taskbar icon
 

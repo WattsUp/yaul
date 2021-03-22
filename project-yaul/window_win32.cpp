@@ -37,6 +37,13 @@ LRESULT Window::Impl::hitTest(Position cursor, bool lockMutex) noexcept {
     return hitTest(cursor, false);
   }
 
+  // From API reference:
+  // In conformance with conventions for the RECT structure, the bottom-right
+  // coordinates of the returned rectangle are exclusive. In other words, the
+  // pixel at (right, bottom) lies immediately outside the rectangle.
+  window.right -= 1;
+  window.bottom -= 1;
+
   if (resizable) {
     enum EdgeMask : uint8_t {
       top    = 0x01,
@@ -117,7 +124,6 @@ LRESULT CALLBACK Window::Impl::windowProcedure(HWND hWindow,
         return window->hitTest(
             Position{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}, false);
       }
-
     } break;
     case WM_NCACTIVATE: {
       std::lock_guard<std::mutex> lock(window->mutex);

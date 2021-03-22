@@ -34,6 +34,7 @@ set (TEST_SRCS
   "dimensions_test.cpp"
   "monitor_test.cpp"
   "object_test.cpp"
+  "window_test.cpp"
 )
 
 target_sources("gtester" PRIVATE ${TEST_SRCS} ${SRCS})

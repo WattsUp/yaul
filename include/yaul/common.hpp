@@ -100,7 +100,8 @@ typedef unsigned __int32 uint32_t;
   x::x(const x& o) noexcept : base(std::make_unique<Impl>(*o.impl<Impl>())) {} \
   x& x::operator= /* NOLINT (bugprone-macro-parentheses) */                    \
       (const x& o) noexcept {                                                  \
-    base::operator=(o);                                                        \
+    if (this != &o)                                                            \
+      setImpl(std::make_unique<Impl>(*o.impl<Impl>()));                        \
     return *this;                                                              \
   }
 
@@ -119,6 +120,17 @@ typedef unsigned __int32 uint32_t;
   YAUL_IMPL_DESTRUCT(x) YAUL_IMPL_MOVE(x, base) YAUL_IMPL_COPY(x, base)
 
 namespace yaul {
+
+/**
+ * @brief Generate a random number constrained to a range
+ *
+ * @param min minimum value (inclusive)
+ * @param max maximum value (inclusive)
+ * @return int
+ */
+inline int randRange(const int min, const int max) {
+  return rand() % (max - min + 1) + min;
+}
 
 /**
  * @brief Get the library version as a string

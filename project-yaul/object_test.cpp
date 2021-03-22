@@ -1,5 +1,6 @@
 #include <yaul/object.hpp>
 
+#include "common/string.hpp"
 #include "object_impl.hpp"
 
 #include <gtest/gtest.h>
@@ -75,20 +76,30 @@ TestObject::Impl& TestObject::Impl::operator=(
 
 class Object : public ::testing::Test {
  protected:
+  ::yaul::string initialConfig;
+
   int testValue;
   TestObject* object;
 
   virtual void SetUp() {
-    srand((unsigned)time(NULL));
     testValue = rand();
     object    = new TestObject();
     object->giveTestValue(new int(testValue));
+
+    initialConfig += "  testValue=  " + std::to_string(testValue) + ";\n";
   }
 
   virtual void TearDown() {
     delete object;
     if (object != nullptr)
       EXPECT_TRUE(TestObject::Impl::implementationDeleted);
+
+    if (::testing::Test::HasFailure()) {
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_RED,
+                                         "Failing Test Configuration\n");
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_DEFAULT, "%s",
+                                         initialConfig.c_str());
+    }
   }
 };
 
@@ -122,7 +133,12 @@ TEST_F(Object, CopyConstructor) {
 
 TEST_F(Object, CopyAssignment) {
   {
-    TestObject copy = *object;
+    TestObject copy{};
+    copy = *object;
+
+    // Original copy should be deleted
+    ASSERT_TRUE(TestObject::Impl::implementationDeleted);
+    TestObject::Impl::implementationDeleted = false;
 
     ASSERT_TRUE(object->implSet());
     ASSERT_NE(object->getTestValue(), nullptr);
@@ -168,7 +184,13 @@ TEST_F(Object, MoveConstructor) {
 
 TEST_F(Object, MoveAssignment) {
   {
-    TestObject destination = std::move(*object);
+    TestObject destination{};
+    destination = std::move(*object);
+
+    // Original destination should be deleted
+    ASSERT_TRUE(TestObject::Impl::implementationDeleted);
+    TestObject::Impl::implementationDeleted = false;
+
     ASSERT_FALSE(object->implSet());
     ASSERT_TRUE(destination.implSet());
 
@@ -267,19 +289,29 @@ TestSharedObject::Impl& TestSharedObject::Impl::operator=(
 
 class SharedObject : public ::testing::Test {
  protected:
+  ::yaul::string initialConfig;
+
   int testValue;
   TestSharedObject* object;
 
   virtual void SetUp() {
-    srand((unsigned)time(NULL));
     testValue = rand();
     object    = new TestSharedObject();
     object->giveTestValue(new int(testValue));
+
+    initialConfig += "  testValue=  " + std::to_string(testValue) + ";\n";
   }
 
   virtual void TearDown() {
     delete object;
     EXPECT_TRUE(TestSharedObject::Impl::implementationDeleted);
+
+    if (::testing::Test::HasFailure()) {
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_RED,
+                                         "Failing Test Configuration\n");
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_DEFAULT, "%s",
+                                         initialConfig.c_str());
+    }
   }
 };
 
@@ -313,7 +345,8 @@ TEST_F(SharedObject, CopyConstructor) {
 
 TEST_F(SharedObject, CopyAssignment) {
   {
-    TestSharedObject copy = *object;
+    TestSharedObject copy(*object);
+    copy = *object;
 
     ASSERT_TRUE(object->implSet());
     ASSERT_NE(object->getTestValue(), nullptr);
@@ -351,7 +384,8 @@ TEST_F(SharedObject, MoveConstructor) {
 
 TEST_F(SharedObject, MoveAssignment) {
   {
-    TestSharedObject destination = std::move(*object);
+    TestSharedObject destination(*object);
+    destination = std::move(*object);
     ASSERT_FALSE(object->implSet());
     ASSERT_TRUE(destination.implSet());
     EXPECT_FALSE(TestSharedObject::Impl::implementationDeleted);

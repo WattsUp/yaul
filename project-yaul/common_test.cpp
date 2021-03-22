@@ -10,6 +10,10 @@ using Result = ::yaul::Result;
 
 class Common : public ::testing::Test {
  protected:
+  ::yaul::string initialConfig;
+  int min;
+  int max;
+
   static constexpr char const* exceptionMessage{
       "Exception was requested to be thrown"};
 
@@ -45,10 +49,32 @@ class Common : public ::testing::Test {
     return true;
   }
 
-  virtual void SetUp() {}
+  virtual void SetUp() {
+    min = rand();
+    max = rand();
+    if (min > max)
+      std::swap(min, max);
+    initialConfig += "  min=          " + std::to_string(min) + ";\n";
+    initialConfig += "  max=          " + std::to_string(max) + ";\n";
+  }
 
-  virtual void TearDown() {}
+  virtual void TearDown() {
+    if (::testing::Test::HasFailure()) {
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_RED,
+                                         "Failing Test Configuration\n");
+      ::testing::internal::ColoredPrintf(testing::internal::COLOR_DEFAULT, "%s",
+                                         initialConfig.c_str());
+    }
+  }
 };
+
+TEST_F(Common, RandRange) {
+  for (int i = 0; i < 65536; ++i) {
+    auto random = ::yaul::randRange(min, max);
+    ASSERT_GE(random, min);
+    ASSERT_LE(random, max);
+  }
+}
 
 TEST_F(Common, VersionString) {
   EXPECT_STREQ(VERSION_STRING, ::yaul::getVersionString());

@@ -2,10 +2,6 @@
 
 #include "common/logger.hpp"
 
-#ifdef YAUL_MOCKED
-#include "monitor_mocked.hpp"
-#endif
-
 namespace yaul {
 
 std::list<Monitor::Impl> Monitor::Impl::enumerate() noexcept {

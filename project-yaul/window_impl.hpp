@@ -24,6 +24,10 @@ constexpr UINT YAUL_WM_STOP_LOOP  = (WM_USER + 1);
 #include "xcb.hpp"
 #endif /* __linux__ */
 
+#ifdef YAUL_MOCKED
+#include "window_mocked.hpp"
+#endif /* YAUL_MOCKED */
+
 namespace yaul {
 
 class Window::Impl final : public SharedObject::Impl {
@@ -122,7 +126,8 @@ class Window::Impl final : public SharedObject::Impl {
    * @brief Set the width of the resizing border, a transparent area around the
    * window that captures mouse event for resizing.
    *
-   * @param border width of each edge's border in pixels
+   * @param border width of each edge's border in pixels, 0 will not generate
+   * resizing handles for that edge
    * @param lockMutex true will lock the mutex during operation
    */
   void setResizingBorder(Edges border, bool lockMutex = true) noexcept;
@@ -183,6 +188,15 @@ class Window::Impl final : public SharedObject::Impl {
    * @param lockMutex true will lock the mutex during operation
    */
   void setShowState(ShowState state, bool lockMutex = true) noexcept;
+
+  /**
+   * @brief Get the show state of the window, see ShowState
+   *
+   * @return ShowState
+   */
+  [[nodiscard]] inline ShowState getShowState() const noexcept {
+    return showState;
+  }
 
   /**
    * @brief Request the window be closed
@@ -280,7 +294,7 @@ class Window::Impl final : public SharedObject::Impl {
    * - WS_POPUP for borderless windows
    */
   enum class WindowStyle : DWORD {
-    base = WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+    base = WS_SIZEBOX | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
 
     windowed        = base | WS_CAPTION | WS_OVERLAPPED,
     aeroBorderless  = base | WS_CAPTION | WS_POPUP,
@@ -346,10 +360,10 @@ class Window::Impl final : public SharedObject::Impl {
   static constexpr int defaultResizingBorder = 8;
   Edges resizingBorder
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-      {::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-       ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)};
+      {::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CYSIZEFRAME),
+       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXSIZEFRAME),
+       ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CYSIZEFRAME),
+       ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXSIZEFRAME)};
 #endif /* WIN32 */
 #if defined(__linux) || defined(__linux__)
   = {defaultResizingBorder, defaultResizingBorder, defaultResizingBorder,

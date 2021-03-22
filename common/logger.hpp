@@ -3,17 +3,17 @@
 
 #include <yaul/common.hpp>
 
-#include "string.hpp"
+#include "common/string.hpp"
 
 namespace yaul {
 
 class Logger {
  private:
-  Logger()                = default;
+  Logger() noexcept       = default;
   logger_t loggerFunction = nullptr;
 
  public:
-  ~Logger() = default;
+  ~Logger() noexcept = default;
   YAUL_NO_COPY(Logger);
   YAUL_NO_MOVE(Logger);
 

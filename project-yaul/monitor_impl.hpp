@@ -12,6 +12,10 @@
 #include "xcb.hpp"
 #endif /* __linux__ */
 
+#ifdef YAUL_MOCKED
+#include "monitor_mocked.hpp"
+#endif /* YAUL_MOCKED */
+
 namespace yaul {
 
 class Monitor::Impl : public Object::Impl {

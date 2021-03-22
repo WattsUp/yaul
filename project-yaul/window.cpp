@@ -202,7 +202,7 @@ void Window::Impl::setTitle(const char* title, bool lockMutex) noexcept {
     mutex.unlock();
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  WideChar wTitle(title);
+  WideChar wTitle(this->title);
   ::SetWindowTextW(nativeWindow,
                    wTitle.c_str());  // Not asynchronous, unlock mutex before
 #elif defined(__linux) || defined(__linux__)
@@ -232,9 +232,9 @@ void Window::Impl::setResizable(bool resizable, bool lockMutex) noexcept {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   if (!borderless) {
     auto style = ::GetWindowLongPtrW(nativeWindow, GWL_STYLE);
-    style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+    style &= ~(WS_SIZEBOX | WS_MAXIMIZEBOX);
     if (resizable)
-      style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+      style |= WS_SIZEBOX | WS_MAXIMIZEBOX;
 
     ::SetWindowLongPtrW(nativeWindow, GWL_STYLE, style);
     ::SetWindowPos(nativeWindow, nullptr, 0, 0, 0, 0,
@@ -532,6 +532,10 @@ void Window::addDraggingAreaMask(Rectangle rect) noexcept {
 
 void Window::setShowState(ShowState state) noexcept {
   impl<Impl>()->setShowState(state);
+}
+
+Window::ShowState Window::getShowState() const noexcept {
+  return impl<Impl>()->getShowState();
 }
 
 }  // namespace yaul

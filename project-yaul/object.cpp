@@ -19,9 +19,14 @@ Object& Object::operator=(Object&& o) noexcept {
 }
 
 Object::Object(const Object& o) noexcept
-    : pImpl(std::make_unique<Impl>(*o.pImpl)) {}
+    : pImpl(std::make_unique<Impl>(*o.pImpl)) {
+  // Not expecting a call, derrived classes need to copy the pImpl as their
+  // derrived Impl
+}
 
 Object& Object::operator=(const Object& o) noexcept {
+  // Not expecting a call, derrived classes need to copy the pImpl as their
+  // derrived Impl
   if (this != &o)
     pImpl = std::make_unique<Impl>(*o.pImpl);
   return *this;
@@ -50,7 +55,11 @@ SharedObject& SharedObject::operator=(SharedObject&& o) noexcept {
 SharedObject::SharedObject(const SharedObject& o) noexcept = default;
 
 // Copy pointer so shared_ptr has another owner
-SharedObject& SharedObject::operator=(const SharedObject& o) noexcept = default;
+SharedObject& SharedObject::operator=(const SharedObject& o) noexcept {
+  if (this != &o)
+    pImpl = o.pImpl;
+  return *this;
+}
 
 void SharedObject::setImpl(std::shared_ptr<Impl> p) noexcept {
   pImpl = std::move(p);
