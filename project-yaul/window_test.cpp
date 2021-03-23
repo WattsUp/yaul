@@ -23,37 +23,45 @@ class Window : public ::testing::Test {
 
     title = "Random window title: ";
     // Add emoticons
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 8; ++i) {
       title.push_back(
           static_cast<char32_t>(::yaul::randRange(0x1F601, 0x1F64F)));
+    }
 
     // Add transport and map symbols
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 8; ++i) {
       title.push_back(
           static_cast<char32_t>(::yaul::randRange(0x1F680, 0x1F6C0)));
+    }
 
     // Add Cyrillic glyphs
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 8; ++i) {
       title.push_back(static_cast<char32_t>(::yaul::randRange(0x0400, 0x04FF)));
+    }
 
     showState = ::yaul::Window::ShowState::restore;
 
-    initialConfig += "  size.width:   " + std::to_string(size.width) + "\n";
-    initialConfig += "  size.height:  " + std::to_string(size.height) + "\n";
-    initialConfig += "  title=       \"" + title + "\";\n";
+    initialConfig += "  size.width  = " + std::to_string(size.width) + ";\n";
+    initialConfig += "  size.height = " + std::to_string(size.height) + ";\n";
+    initialConfig += "  title       = \"" + title + "\";\n";
 
     ASSERT_NO_THROW(window =
                         new ::yaul::Window(size, title.c_str(), showState));
     wm.processAsyncCalls();
+    wm.processMessages();
   }
 
   virtual void TearDown() {
+    auto& wm = WindowManager::instance();
+    EXPECT_TRUE(wm.windowClass.messages.empty());
+
     delete window;
     window = nullptr;
+    wm.processMessages();  // Process the destroy messages
 
-    auto& wm = WindowManager::instance();
     EXPECT_FALSE(wm.anyErrors);
     EXPECT_TRUE(wm.asyncQueue.empty());
+    EXPECT_TRUE(wm.windowClass.messages.empty());
 
     if (::testing::Test::HasFailure()) {
       ::testing::internal::ColoredPrintf(testing::internal::COLOR_RED,
@@ -102,6 +110,8 @@ TEST_F(Window, CloseButton) {
   ASSERT_FALSE(window->shouldClose());
   auto& wm = WindowManager::instance();
   wm.sendEventToAll(WindowManager::Event::close);
+  wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_TRUE(window->shouldClose());
 }
 
@@ -116,11 +126,13 @@ TEST_F(Window, GetSize) {
 TEST_F(Window, SetSize) {
   size.width  = ::yaul::randRange(1, 2048);
   size.height = ::yaul::randRange(1, 2048);
-  initialConfig += "  size.width:   " + std::to_string(size.width) + "\n";
-  initialConfig += "  size.height:  " + std::to_string(size.height) + "\n";
+  initialConfig += "  size.width  = " + std::to_string(size.width) + ";\n";
+  initialConfig += "  size.height = " + std::to_string(size.height) + ";\n";
 
   ASSERT_TRUE(window->setSize(size));
-  WindowManager::instance().processAsyncCalls();
+  auto& wm = WindowManager::instance();
+  wm.processAsyncCalls();
+  wm.processMessages();
 
   ASSERT_EQ(window->getSize(), size);
 }
@@ -136,17 +148,20 @@ TEST_F(Window, SetPosition) {
 
   ::yaul::Position position{::yaul::randRange(1, 2048),
                             ::yaul::randRange(1, 2048)};
-  initialConfig += "  position.x:   " + std::to_string(position.x) + "\n";
-  initialConfig += "  position.y:   " + std::to_string(position.y) + "\n";
+
+  initialConfig += "  position.x  = " + std::to_string(position.x) + ";\n";
+  initialConfig += "  position.y  = " + std::to_string(position.y) + ";\n";
 
   ASSERT_TRUE(window->setPosition(position, nullptr));
   wm.processAsyncCalls();
+  wm.processMessages();
 
   EXPECT_EQ(wmWindow.frameRect, position);
 
   auto monitor = ::yaul::Monitor::enumerate().back();
   ASSERT_TRUE(window->setPosition(position, &monitor));
   wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(wmWindow.frameRect, position + monitor.getPosition());
 }
 
@@ -173,7 +188,7 @@ TEST_F(Window, SetTitle) {
   for (int i = 0; i < 8; ++i)
     title.push_back(static_cast<char32_t>(::yaul::randRange(0x0400, 0x04FF)));
 
-  initialConfig += "  title=       \"" + title + "\";\n";
+  initialConfig += "  title       = \"" + title + "\";\n";
 
   window->setTitle(title.c_str());
 
@@ -192,6 +207,7 @@ TEST_F(Window, SetShowState) {
   showState = ::yaul::Window::ShowState::hidden;
   window->setShowState(showState);
   wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(wmWindow.showState, showState);
   EXPECT_EQ(window->getShowState(), showState);
   EXPECT_EQ(wmWindow.rect, (::yaul::Rectangle{0, 0, 0, 0}));
@@ -199,6 +215,7 @@ TEST_F(Window, SetShowState) {
   showState = ::yaul::Window::ShowState::minimize;
   window->setShowState(showState);
   wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(wmWindow.showState, showState);
   EXPECT_EQ(window->getShowState(), showState);
   EXPECT_EQ(wmWindow.rect, (::yaul::Rectangle{0, 0, 0, 0}));
@@ -206,6 +223,7 @@ TEST_F(Window, SetShowState) {
   showState = ::yaul::Window::ShowState::maximize;
   window->setShowState(showState);
   wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(wmWindow.showState, showState);
   EXPECT_EQ(window->getShowState(), showState);
   EXPECT_EQ(wmWindow.frameRect, MonitorMock::monitors.front().rect);
@@ -213,6 +231,7 @@ TEST_F(Window, SetShowState) {
   showState = ::yaul::Window::ShowState::restore;
   window->setShowState(showState);
   wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(wmWindow.showState, showState);
   EXPECT_EQ(window->getShowState(), showState);
   EXPECT_EQ(wmWindow.rect, size);
@@ -222,12 +241,18 @@ TEST_F(Window, GetShowState) {
   auto& wm = WindowManager::instance();
 
   wm.sendEventToAll(WindowManager::Event::maximize);
+  wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(window->getShowState(), ::yaul::Window::ShowState::maximize);
 
   wm.sendEventToAll(WindowManager::Event::minimize);
+  wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(window->getShowState(), ::yaul::Window::ShowState::minimize);
 
   wm.sendEventToAll(WindowManager::Event::restore);
+  wm.processAsyncCalls();
+  wm.processMessages();
   EXPECT_EQ(window->getShowState(), ::yaul::Window::ShowState::restore);
 }
 
@@ -246,6 +271,7 @@ TEST_F(Window, SetBorderless) {
 
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   // Client size should be preserved
   ASSERT_EQ(window->getSize(), size);
@@ -253,6 +279,7 @@ TEST_F(Window, SetBorderless) {
 
   window->setBorderless(false);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   // Client size should be preserved
   ASSERT_EQ(window->getSize(), size);
@@ -262,6 +289,7 @@ TEST_F(Window, SetBorderless) {
   wm.compositionEnabled = false;
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   // Client size should be preserved
   ASSERT_EQ(window->getSize(), size);
@@ -269,6 +297,7 @@ TEST_F(Window, SetBorderless) {
 
   window->setBorderless(false);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   // Client size should be preserved
   ASSERT_EQ(window->getSize(), size);
@@ -294,6 +323,7 @@ TEST_F(Window, SetBorderlessShadow) {
   // BorderlessShadow is false and can be realized now
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_FALSE(wmWindow.frameExtendedIntoClientArea);
 
   window->setBorderlessShadow(true);
@@ -301,11 +331,13 @@ TEST_F(Window, SetBorderlessShadow) {
 
   window->setBorderless(false);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   // Composition disabled
   wm.compositionEnabled = false;
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   window->setBorderlessShadow(false);
   ASSERT_FALSE(wmWindow.frameExtendedIntoClientArea);
@@ -327,6 +359,7 @@ TEST_F(Window, SetFullscreen) {
   auto monitor = ::yaul::Monitor::enumerate().front();
   window->setFullscreen(true, nullptr);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_EQ(window->getSize(), monitor.getSize());
   ASSERT_EQ(wmWindow.rect, monitor.getPosition());
@@ -335,6 +368,7 @@ TEST_F(Window, SetFullscreen) {
   monitor = ::yaul::Monitor::enumerate().back();
   window->setFullscreen(true, &monitor);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_EQ(window->getSize(), monitor.getSize());
   ASSERT_EQ(wmWindow.rect, monitor.getPosition());
@@ -342,18 +376,21 @@ TEST_F(Window, SetFullscreen) {
   // Restore to original state
   window->setFullscreen(false);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, originalRect);
   ASSERT_NE(wmWindow.rect, wmWindow.frameRect);
 
   // Borderless before will restore to borderless after
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_TRUE(wmWindow.frameExtendedIntoClientArea);
   originalRect = wmWindow.rect;
 
   window->setFullscreen(true, &monitor);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_EQ(window->getSize(), monitor.getSize());
   ASSERT_EQ(wmWindow.rect, monitor.getPosition());
@@ -361,6 +398,7 @@ TEST_F(Window, SetFullscreen) {
   // Restore to original state
   window->setFullscreen(false);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, originalRect);
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_TRUE(wmWindow.frameExtendedIntoClientArea);
@@ -369,22 +407,26 @@ TEST_F(Window, SetFullscreen) {
   originalRect = wmWindow.rect;
   window->setShowState(::yaul::Window::ShowState::maximize);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.showState, ::yaul::Window::ShowState::maximize);
   ASSERT_EQ(window->getShowState(), ::yaul::Window::ShowState::maximize);
 
   window->setFullscreen(true, &monitor);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_EQ(window->getSize(), monitor.getSize());
   ASSERT_EQ(wmWindow.rect, monitor.getPosition());
 
   window->setFullscreen(false);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.rect, wmWindow.frameRect);
   ASSERT_TRUE(wmWindow.frameExtendedIntoClientArea);
 
   window->setShowState(::yaul::Window::ShowState::restore);
   wm.processAsyncCalls();
+  wm.processMessages();
   ASSERT_EQ(wmWindow.showState, ::yaul::Window::ShowState::restore);
   ASSERT_EQ(window->getShowState(), ::yaul::Window::ShowState::restore);
 
@@ -439,6 +481,7 @@ TEST_F(Window, SetResizable) {
 
   window->setResizable(false);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   cursor.x = wmWindow.frameRect.x;
   cursor.y = wmWindow.frameRect.y;
@@ -476,6 +519,7 @@ TEST_F(Window, SetResizable) {
   window->setResizable(true);
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   cursor.x = wmWindow.frameRect.x;
   cursor.y = wmWindow.frameRect.y;
@@ -514,6 +558,7 @@ TEST_F(Window, SetResizable) {
 
   window->setResizable(false);
   wm.processAsyncCalls();
+  wm.processMessages();
 
   cursor.x = wmWindow.frameRect.x;
   cursor.y = wmWindow.frameRect.y;
@@ -563,16 +608,18 @@ TEST_F(Window, SetResizingBorder) {
 
   ::yaul::Edges border{::yaul::randRange(0, 16), ::yaul::randRange(0, 16),
                        ::yaul::randRange(0, 16), ::yaul::randRange(0, 16)};
-  initialConfig += "  top=          " + std::to_string(border.top) + ";\n";
-  initialConfig += "  right=        " + std::to_string(border.right) + ";\n";
-  initialConfig += "  bottom=       " + std::to_string(border.bottom) + ";\n";
-  initialConfig += "  left=         " + std::to_string(border.left) + ";\n";
+
+  initialConfig += "  top         = " + std::to_string(border.top) + ";\n";
+  initialConfig += "  right       = " + std::to_string(border.right) + ";\n";
+  initialConfig += "  bottom      = " + std::to_string(border.bottom) + ";\n";
+  initialConfig += "  left        = " + std::to_string(border.left) + ";\n";
 
   ASSERT_LT(border.top, SystemMetricsMocked::cYSize);
 
   window->setResizingBorder(border);
 
   wm.processAsyncCalls();
+  wm.processMessages();
 
   auto edges = static_cast<::yaul::Edges>(wmWindow.frameRect);
 
@@ -647,12 +694,13 @@ TEST_F(Window, SetDraggingArea) {
   int bottom    = ::yaul::randRange(0, size.height);
   int menuWidth = ::yaul::randRange(0, size.width);
 
-  initialConfig += "  bottom=       " + std::to_string(bottom) + ";\n";
-  initialConfig += "  menuWidth=    " + std::to_string(menuWidth) + ";\n";
+  initialConfig += "  bottom      = " + std::to_string(bottom) + ";\n";
+  initialConfig += "  menuWidth   = " + std::to_string(menuWidth) + ";\n";
 
   window->setDraggingArea(bottom, menuWidth);
 
   wm.processAsyncCalls();
+  wm.processMessages();
 
   auto edges = static_cast<::yaul::Edges>(wmWindow.frameRect);
 
@@ -699,6 +747,7 @@ TEST_F(Window, DraggingAreaMask) {
   // Only affects borderless
   window->setBorderless(true);
   wm.processAsyncCalls();
+  wm.processMessages();
   auto edges = static_cast<::yaul::Edges>(wmWindow.frameRect);
 
   // Remove resizing
@@ -713,10 +762,10 @@ TEST_F(Window, DraggingAreaMask) {
   rectA.x      = ::yaul::randRange(0, size.width - rectA.width);
   rectA.y      = ::yaul::randRange(0, bottom - rectA.height);
 
-  initialConfig += "  rectA.x:      " + std::to_string(rectA.x) + "\n";
-  initialConfig += "  rectA.y:      " + std::to_string(rectA.y) + "\n";
-  initialConfig += "  rectA.width:  " + std::to_string(rectA.width) + "\n";
-  initialConfig += "  rectA.height: " + std::to_string(rectA.height) + "\n";
+  initialConfig += "  rectA.x     = " + std::to_string(rectA.x) + ";\n";
+  initialConfig += "  rectA.y     = " + std::to_string(rectA.y) + ";\n";
+  initialConfig += "  rectA.width = " + std::to_string(rectA.width) + ";\n";
+  initialConfig += "  rectA.height= " + std::to_string(rectA.height) + ";\n";
 
   // Validate rectA is wholely inside the dragging area
   auto rectAEdges = static_cast<::yaul::Edges>(rectA);
@@ -731,10 +780,10 @@ TEST_F(Window, DraggingAreaMask) {
   rectB.x      = ::yaul::randRange(0, size.width - rectB.width);
   rectB.y      = ::yaul::randRange(0, bottom - rectB.height);
 
-  initialConfig += "  rectB.x:      " + std::to_string(rectB.x) + "\n";
-  initialConfig += "  rectB.y:      " + std::to_string(rectB.y) + "\n";
-  initialConfig += "  rectB.width:  " + std::to_string(rectB.width) + "\n";
-  initialConfig += "  rectB.height: " + std::to_string(rectB.height) + "\n";
+  initialConfig += "  rectB.x     = " + std::to_string(rectB.x) + ";\n";
+  initialConfig += "  rectB.y     = " + std::to_string(rectB.y) + ";\n";
+  initialConfig += "  rectB.width = " + std::to_string(rectB.width) + ";\n";
+  initialConfig += "  rectB.height= " + std::to_string(rectB.height) + ";\n";
 
   // Validate rectB is wholely inside the dragging area
   auto rectBEdges = static_cast<::yaul::Edges>(rectB);
@@ -744,6 +793,7 @@ TEST_F(Window, DraggingAreaMask) {
   ASSERT_LE(edges.left, wmWindow.frameRect.x + rectBEdges.left);
 
   wm.processAsyncCalls();
+  wm.processMessages();
 
   ::yaul::Position cursor;
   int hitCount;

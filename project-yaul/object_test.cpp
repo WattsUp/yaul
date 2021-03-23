@@ -86,7 +86,7 @@ class Object : public ::testing::Test {
     object    = new TestObject();
     object->giveTestValue(new int(testValue));
 
-    initialConfig += "  testValue=  " + std::to_string(testValue) + ";\n";
+    initialConfig += "  testValue   = " + std::to_string(testValue) + ";\n";
   }
 
   virtual void TearDown() {
@@ -299,7 +299,7 @@ class SharedObject : public ::testing::Test {
     object    = new TestSharedObject();
     object->giveTestValue(new int(testValue));
 
-    initialConfig += "  testValue=  " + std::to_string(testValue) + ";\n";
+    initialConfig += "  testValue   = " + std::to_string(testValue) + ";\n";
   }
 
   virtual void TearDown() {

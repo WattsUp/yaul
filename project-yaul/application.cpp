@@ -74,17 +74,18 @@ Window Application::Impl::addWindow(
   window.setTitle(id);         // TODO (WattsUp) get title
   window.setBorderless(true);  // Yaul draws custom a menubar
 
+  // setBorderless preserves size but there is a race condition with async
+  // SetWindowPos that could fail and result in an improper size
+  window.setSize(size);
+
   window.setShowState(showState);
 
   return window;
 }
 
-void Application::Impl::waitForAllWindowsToClose(bool force) noexcept {
+void Application::Impl::waitForAllWindowsToClose() noexcept {
   if (windows.empty() || !running)
     return;
-
-  if (force)
-    stop();
 
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, [this]() { return windows.empty(); });
@@ -109,8 +110,8 @@ Window Application::apiAddWindow(const char* id,
   return Window();
 }
 
-void Application::waitForAllWindowsToClose(bool force) noexcept {
-  impl<Impl>()->waitForAllWindowsToClose(force);
+void Application::waitForAllWindowsToClose() noexcept {
+  impl<Impl>()->waitForAllWindowsToClose();
 }
 
 }  // namespace yaul

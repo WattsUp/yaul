@@ -48,7 +48,7 @@ ATOM RegisterClassExW_mocked(const WNDCLASSEXW* wc) {
     return 0;
 
   auto& wm            = WindowManager::instance();
-  wm.windowClass.atom = static_cast<ATOM>(rand());
+  wm.windowClass.atom = static_cast<ATOM>(::yaul::randRange(1, RAND_MAX));
 
   wm.windowClass.className = ::yaul::WideChar::rev(wc->lpszClassName);
 
@@ -82,8 +82,11 @@ HWND CreateWindowExW_mocked(DWORD dwExStyle,
     return nullptr;
 
   if (wm.windowClass.threadID == std::thread::id()) {
-    wm.windowClass.threadID = std::this_thread::get_id();
+    wm.windowClass.threadID       = std::this_thread::get_id();
+    wm.windowClass.threadNativeID = ::GetCurrentThreadId();
   } else if (wm.windowClass.threadID != std::this_thread::get_id()) {
+    std::cerr << "Trying to CreateWindow by a different thread" << std::endl;
+    wm.anyErrors = true;
     return nullptr;
   }
 
@@ -138,8 +141,12 @@ BOOL DestroyWindow_mocked(HWND hWnd) {
   auto& wm = WindowManager::instance();
 
   if (wm.windowClass.threadID == std::thread::id()) {
-    wm.windowClass.threadID = std::this_thread::get_id();
+    wm.windowClass.threadID       = std::this_thread::get_id();
+    wm.windowClass.threadNativeID = ::GetCurrentThreadId();
   } else if (wm.windowClass.threadID != std::this_thread::get_id()) {
+    std::cerr << "Trying to DestroyWindow created by a different thread"
+              << std::endl;
+    wm.anyErrors = true;
     return FALSE;
   }
 
@@ -148,8 +155,8 @@ BOOL DestroyWindow_mocked(HWND hWnd) {
     return FALSE;
   // auto& window = itr->second;
 
-  wm.windowClass.wndProc(hWnd, WM_DESTROY, 0, 0);
-  wm.windowClass.wndProc(hWnd, WM_NCDESTROY, 0, 0);
+  wm.postMessage(hWnd, WM_DESTROY, 0, 0);
+  wm.postMessage(hWnd, WM_NCDESTROY, 0, 0);
 
   // TODO (WattsUp) Destroy children
 
@@ -484,8 +491,7 @@ BOOL ShowWindow_mocked(HWND hWnd, int nCmdShow) {
       beingShown = static_cast<WPARAM>(previouslyVisible);
       break;
   }
-
-  wm.windowClass.wndProc(hWnd, WM_SHOWWINDOW, beingShown, 0);
+  wm.postMessage(hWnd, WM_SHOWWINDOW, beingShown, 0);
 
   return previouslyVisible;
 }
@@ -526,6 +532,9 @@ LRESULT DefWindowProcW_mocked(HWND hWnd,
                               UINT Msg,
                               WPARAM wParam,
                               LPARAM lParam) {
+  if (Msg == WM_DESTROY || Msg == WM_NCDESTROY)
+    return 0;
+
   auto& wm = WindowManager::instance();
 
   auto itr = wm.windows.find(hWnd);
@@ -614,8 +623,6 @@ LRESULT DefWindowProcW_mocked(HWND hWnd,
 
       return HTBORDER;
     } break;
-    case WM_DESTROY:
-    case WM_NCDESTROY:
     case WM_SHOWWINDOW:
       return 0;
   }
@@ -666,6 +673,21 @@ WindowManager::WindowManager() noexcept {
       break;
   }
   return edges;
+}
+
+void WindowManager::postMessage(HWND hWnd,
+                                UINT msg,
+                                WPARAM wParam,
+                                LPARAM lParam,
+                                bool lockMutex) {
+  if (lockMutex) {
+    std::unique_lock<std::mutex> lock(mutex);
+    return postMessage(hWnd, msg, wParam, lParam, false);
+  }
+  windowClass.messages.emplace_back(MSG{hWnd, msg, wParam, lParam,
+                                        static_cast<DWORD>(time(nullptr)),
+                                        POINT{0, 0}});
+  cv.notify_all();
 }
 
 LRESULT WindowManager::sendHitTest(HWND hWnd, ::yaul::Position cursor) {
@@ -721,9 +743,25 @@ void WindowManager::sendEventToAll(Event event) {
   }
   if (msg == WM_NULL)
     return;
+  std::unique_lock<std::mutex> lock(mutex);
   for (auto& itr : windows) {
-    windowClass.wndProc(itr.first, msg, wParam, lParam);
+    postMessage(itr.first, msg, wParam, lParam, false);
   }
+}
+
+void WindowManager::processMessages() noexcept {
+  std::unique_lock<std::mutex> lock(mutex);
+  while (!windowClass.messages.empty()) {
+    DispatchMessageW(&windowClass.messages.front());
+    windowClass.messages.pop_front();
+  }
+  cv.notify_all();
+}
+
+void WindowManager::waitForMessageQueue() noexcept {
+  // Wait until a message comes
+  std::unique_lock<std::mutex> lock(mutex);
+  cv.wait(lock, [this] { return this->windowClass.messages.empty(); });
 }
 
 BOOL GetWindowPlacement_mocked(HWND hWnd, WINDOWPLACEMENT* lpwndpl) {
@@ -870,4 +908,111 @@ BOOL GetMonitorInfoW_mocked(HMONITOR hMonitor, LPMONITORINFO lpmi) {
   }
 
   return TRUE;
+}
+
+BOOL PeekMessageW_mocked(LPMSG lpMsg,
+                         HWND hWnd,
+                         UINT wMsgFilterMin,
+                         UINT wMsgFilterMax,
+                         UINT wRemoveMsg) {
+  auto& wm = WindowManager::instance();
+
+  if (wm.windowClass.threadID == std::thread::id()) {
+    wm.windowClass.threadID       = std::this_thread::get_id();
+    wm.windowClass.threadNativeID = ::GetCurrentThreadId();
+  } else if (wm.windowClass.threadID != std::this_thread::get_id()) {
+    std::cerr << "Trying to PeekMessage by a different thread" << std::endl;
+    wm.anyErrors = true;
+    return FALSE;
+  }
+
+  if (hWnd != nullptr || wMsgFilterMin != 0 || wMsgFilterMax != 0) {
+    // TODO (WattsUp) perform message filtering
+    wm.anyErrors = true;
+    return FALSE;
+  }
+
+  std::unique_lock<std::mutex> lock(wm.mutex);
+  if (wm.windowClass.messages.empty())
+    return FALSE;
+
+  *lpMsg = wm.windowClass.messages.front();
+
+  if ((wRemoveMsg & PM_REMOVE) == PM_REMOVE)
+    wm.windowClass.messages.pop_front();
+
+  wm.cv.notify_all();
+
+  return TRUE;
+}
+
+BOOL GetMessageW_mocked(LPMSG lpMsg,
+                        HWND hWnd,
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax) {
+  auto& wm = WindowManager::instance();
+
+  if (wm.windowClass.threadID == std::thread::id()) {
+    wm.windowClass.threadID       = std::this_thread::get_id();
+    wm.windowClass.threadNativeID = ::GetCurrentThreadId();
+  } else if (wm.windowClass.threadID != std::this_thread::get_id()) {
+    std::cerr << "Trying to GetMessage by a different thread" << std::endl;
+    wm.anyErrors = true;
+    return -1;
+  }
+
+  if (hWnd != nullptr || wMsgFilterMin != 0 || wMsgFilterMax != 0) {
+    // TODO (WattsUp) perform message filtering
+    wm.anyErrors = true;
+    return FALSE;
+  }
+
+  // Wait until a message comes
+  std::unique_lock<std::mutex> lock(wm.mutex);
+  wm.cv.wait(lock, [&wm] { return !wm.windowClass.messages.empty(); });
+
+  *lpMsg = wm.windowClass.messages.front();
+  if (lpMsg->pt.x != 0)
+    wm.anyErrors = true;
+  wm.windowClass.messages.pop_front();
+
+  wm.cv.notify_all();
+
+  return TRUE;
+}
+
+BOOL TranslateMessage_mocked(const MSG* /* lpMsg */) {
+  // TODO (WattsUp) translate the message
+  return FALSE;
+}
+
+LRESULT DispatchMessageW_mocked(const MSG* lpMsg) {
+  if (lpMsg->message == WM_TIMER && lpMsg->lParam != NULL) {
+    // TODO (WattsUp) execute function provided in lParam
+    // auto proc = reinterpret_cast<TIMERPROC>(lpMsg->lParam);
+    return 0;
+  }
+  auto& wm = WindowManager::instance();
+  return wm.windowClass.wndProc(lpMsg->hwnd, lpMsg->message, lpMsg->wParam,
+                                lpMsg->lParam);
+}
+
+BOOL PostThreadMessageW_mocked(DWORD idThread,
+                               UINT Msg,
+                               WPARAM wParam,
+                               LPARAM lParam) {
+  auto& wm = WindowManager::instance();
+
+  if (idThread != wm.windowClass.threadNativeID) {
+    wm.anyErrors = true;
+    return FALSE;
+  }
+
+  wm.postMessage(nullptr, Msg, wParam, lParam);
+  return TRUE;
+}
+
+void PostQuitMessage_mocked(int nExitCode) {
+  PostThreadMessageW(WindowManager::instance().windowClass.threadNativeID,
+                     WM_QUIT, static_cast<WPARAM>(nExitCode), 0);
 }

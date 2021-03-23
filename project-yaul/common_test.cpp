@@ -54,8 +54,8 @@ class Common : public ::testing::Test {
     max = rand();
     if (min > max)
       std::swap(min, max);
-    initialConfig += "  min=          " + std::to_string(min) + ";\n";
-    initialConfig += "  max=          " + std::to_string(max) + ";\n";
+    initialConfig += "  min         = " + std::to_string(min) + ";\n";
+    initialConfig += "  max         = " + std::to_string(max) + ";\n";
   }
 
   virtual void TearDown() {

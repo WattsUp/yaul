@@ -13,9 +13,23 @@ void Application::Impl::loop() noexcept {
   threadReady = true;
   cv.notify_one();
 
+  BOOL result = 0;
+
   while (running) {
-    if (::GetMessageW(&msg, nullptr, 0, 0) == 0) {
+    result = ::GetMessageW(&msg, nullptr, 0, 0);
+    if (result == 0) {
       Logger::instance().log(LogLevel::critical, "WM_QUIT was received");
+      running = false;
+      {
+        std::lock_guard<std::mutex> lock(mutex);
+        windows.clear();
+      }
+      cv.notify_one();
+      return;
+    }
+    if (result == -1) {
+      Logger::instance().log(LogLevel::critical,
+                             "GetMessageW encountered an error");
       running = false;
       {
         std::lock_guard<std::mutex> lock(mutex);
@@ -63,7 +77,6 @@ void Application::Impl::loop() noexcept {
         if (window.shouldClose()) {
           {
             std::lock_guard<std::mutex> lock(mutex);
-            window.setShowState(Window::ShowState::hidden);
             itr = windows.erase(itr);
           }
           cv.notify_one();
@@ -73,6 +86,9 @@ void Application::Impl::loop() noexcept {
       }
     }
   }
+  std::lock_guard<std::mutex> lock(mutex);
+  windows.clear();
+  cv.notify_one();
 }
 
 void Application::Impl::stop() noexcept {

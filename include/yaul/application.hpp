@@ -64,9 +64,8 @@ class YAUL_API Application final : public Object {
   /**
    * @brief Blocking call returned once all windows have closed
    *
-   * @param force will forcefully close all windows
    */
-  void waitForAllWindowsToClose(bool force = false) noexcept;
+  void waitForAllWindowsToClose() noexcept;
 
  private:
   /**

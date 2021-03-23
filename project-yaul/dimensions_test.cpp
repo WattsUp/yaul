@@ -59,23 +59,23 @@ class Dimensions : public ::testing::Test {
     bBottom = (rand() % 2048) - 1024;
     bLeft   = (rand() % 2048) - 1024;
 
-    initialConfig += "  aWidth=   " + std::to_string(aWidth) + ";\n";
-    initialConfig += "  aHeight=  " + std::to_string(aHeight) + ";\n";
-    initialConfig += "  aX=       " + std::to_string(aX) + ";\n";
-    initialConfig += "  aY=       " + std::to_string(aY) + ";\n";
-    initialConfig += "  aTop=     " + std::to_string(aTop) + ";\n";
-    initialConfig += "  aRight=   " + std::to_string(aRight) + ";\n";
-    initialConfig += "  aBottom=  " + std::to_string(aBottom) + ";\n";
-    initialConfig += "  aLeft=    " + std::to_string(aLeft) + ";\n";
+    initialConfig += "  aWidth      = " + std::to_string(aWidth) + ";\n";
+    initialConfig += "  aHeight     = " + std::to_string(aHeight) + ";\n";
+    initialConfig += "  aX          = " + std::to_string(aX) + ";\n";
+    initialConfig += "  aY          = " + std::to_string(aY) + ";\n";
+    initialConfig += "  aTop        = " + std::to_string(aTop) + ";\n";
+    initialConfig += "  aRight      = " + std::to_string(aRight) + ";\n";
+    initialConfig += "  aBottom     = " + std::to_string(aBottom) + ";\n";
+    initialConfig += "  aLeft       = " + std::to_string(aLeft) + ";\n";
 
-    initialConfig += "  bWidth=   " + std::to_string(bWidth) + ";\n";
-    initialConfig += "  bHeight=  " + std::to_string(bHeight) + ";\n";
-    initialConfig += "  bX=       " + std::to_string(bX) + ";\n";
-    initialConfig += "  bY=       " + std::to_string(bY) + ";\n";
-    initialConfig += "  bTop=     " + std::to_string(bTop) + ";\n";
-    initialConfig += "  bRight=   " + std::to_string(bRight) + ";\n";
-    initialConfig += "  bBottom=  " + std::to_string(bBottom) + ";\n";
-    initialConfig += "  bLeft=    " + std::to_string(bLeft) + ";\n";
+    initialConfig += "  bWidth      = " + std::to_string(bWidth) + ";\n";
+    initialConfig += "  bHeight     = " + std::to_string(bHeight) + ";\n";
+    initialConfig += "  bX          = " + std::to_string(bX) + ";\n";
+    initialConfig += "  bY          = " + std::to_string(bY) + ";\n";
+    initialConfig += "  bTop        = " + std::to_string(bTop) + ";\n";
+    initialConfig += "  bRight      = " + std::to_string(bRight) + ";\n";
+    initialConfig += "  bBottom     = " + std::to_string(bBottom) + ";\n";
+    initialConfig += "  bLeft       = " + std::to_string(bLeft) + ";\n";
   }
 
   virtual void TearDown() {

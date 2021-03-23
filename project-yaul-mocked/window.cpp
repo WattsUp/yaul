@@ -5,5 +5,4 @@ void WindowManager::processAsyncCalls() noexcept {
     asyncQueue.front()();
     asyncQueue.pop_front();
   }
-  asyncQueue.shrink_to_fit();
 }

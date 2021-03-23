@@ -10,7 +10,9 @@
 
 #include "monitor_mocked.hpp"
 
+#include <condition_variable>
 #include <deque>
+#include <mutex>
 #include <thread>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -202,6 +204,46 @@ HMONITOR MonitorFromWindow_mocked(HWND hwnd, DWORD dwFlags);
 #define GetMonitorInfoW GetMonitorInfoW_mocked
 BOOL GetMonitorInfoW_mocked(HMONITOR hMonitor, LPMONITORINFO lpmi);
 
+#undef PeekMessageW
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define PeekMessageW PeekMessageW_mocked
+BOOL PeekMessageW_mocked(LPMSG lpMsg,
+                         HWND hWnd,
+                         UINT wMsgFilterMin,
+                         UINT wMsgFilterMax,
+                         UINT wRemoveMsg);
+
+#undef GetMessageW
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define GetMessageW GetMessageW_mocked
+BOOL GetMessageW_mocked(LPMSG lpMsg,
+                        HWND hWnd,
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax);
+
+#undef TranslateMessage
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define TranslateMessage TranslateMessage_mocked
+BOOL TranslateMessage_mocked(const MSG* lpMsg);
+
+#undef DispatchMessageW
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define DispatchMessageW DispatchMessageW_mocked
+LRESULT DispatchMessageW_mocked(const MSG* lpMsg);
+
+#undef PostThreadMessageW
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define PostThreadMessageW PostThreadMessageW_mocked
+BOOL PostThreadMessageW_mocked(DWORD idThread,
+                               UINT Msg,
+                               WPARAM wParam,
+                               LPARAM lParam);
+
+#undef PostQuitMessage
+// NOLINTNEXTLINE (cppcoreguidelines-macro-usage)
+#define PostQuitMessage PostQuitMessage_mocked
+void PostQuitMessage_mocked(int nExitCode);
+
 #elif defined(__linux) || defined(__linux__)
 #endif /* WIN32, __linux__ */
 
@@ -224,6 +266,7 @@ class YAUL_API WindowManager {
     if (reset) {
       // instance.windowClasses.clear() // Don't clear window classes
       instance.windowClass.threadID = std::thread::id();
+      instance.windowClass.messages.clear();
       instance.windows.clear();
       instance.anyErrors = false;
       instance.asyncQueue.clear();
@@ -236,7 +279,7 @@ class YAUL_API WindowManager {
 
   bool anyErrors = false;
 
-  std::deque<std::function<void()>> asyncQueue;
+  std::list<std::function<void()>> asyncQueue;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   struct Handles {
@@ -256,8 +299,20 @@ class YAUL_API WindowManager {
     // wndProc (DispatchMessageW), CreateWindow, and DestroyWindow need to be
     // all on the same thread. Save it on the first call to any of these
     std::thread::id threadID;
+    DWORD threadNativeID = 0;
+
+    std::list<MSG> messages;
   };
   WindowClass windowClass;
+
+  std::mutex mutex;
+  std::condition_variable cv;
+
+  void postMessage(HWND hWnd,
+                   UINT msg,
+                   WPARAM wParam,
+                   LPARAM lParam,
+                   bool lockMutex = true);
 
   bool compositionEnabled = true;
 #elif defined(__linux) || defined(__linux__)
@@ -296,6 +351,9 @@ class YAUL_API WindowManager {
   void sendEventToAll(Event event);
 
   void processAsyncCalls() noexcept;
+  void processMessages() noexcept;
+
+  void waitForMessageQueue() noexcept;
 };
 
 #endif /* YAUL_WINDOW_MOCKED_HPP */
